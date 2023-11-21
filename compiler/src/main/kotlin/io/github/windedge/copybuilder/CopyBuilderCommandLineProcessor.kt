@@ -63,9 +63,6 @@ class CopyBuilderCommandLineProcessor : CommandLineProcessor {
         value: String,
         configuration: CompilerConfiguration,
     ) {
-        val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
-        messageCollector.report(CompilerMessageSeverity.WARNING, "option = ${option}")
-
         when (val optionName = option.optionName) {
             OPTION_ENABLED.optionName -> configuration.put(KEY_ENABLED, value.toBooleanStrict())
             OPTION_VERBOSE.optionName -> configuration.put(KEY_VERBOSE, value.toBooleanStrict())

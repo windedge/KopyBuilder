@@ -1,6 +1,7 @@
 package io.github.windedge.copybuilder
 
 import com.tschuchort.compiletesting.*
+import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.engine.spec.tempdir
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
@@ -15,23 +16,42 @@ class CopyBuilderTest : StringSpec() {
     private val temporaryFolder = tempdir()
 
     init {
-
         "compile test" {
             val result = compile(
-                sourceFile = SourceFile.kotlin(
+                sourceFile = kotlin(
                     "main.kt", """
 fun main() {
   println(debug())
 }
 
 fun debug() = "Hello, World!"
-"""
-                )
-            )
+"""))
+            Assertions.assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+        }
+
+        "should be generated" {
+            val result = compile(
+                sourceFile = kotlin(
+                    "main.kt", """
+import io.github.windedge.copybuilder.KopyBuilder
+import io.github.windedge.copybuilder.CopyBuilderFactory
+
+@KopyBuilder
+data class Fruit(val name: String)
+
+fun main() {
+    val fruit = Fruit("apple")
+    val fruit2 = (fruit as CopyBuilderFactory<Fruit>).copyBuild {
+        put("name", "Pear")
+    }
+    println("fruit2 = " + fruit2)
+}
+
+"""))
+
             Assertions.assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
         }
     }
-
 
     @OptIn(ExperimentalCompilerApi::class)
     fun compile(
@@ -39,10 +59,10 @@ fun debug() = "Hello, World!"
         plugin: CompilerPluginRegistrar,
         commandLineProcessor: CommandLineProcessor,
         enabled: Boolean = true,
-    ): KotlinCompilation.Result {
+    ): CompilationResult {
         return KotlinCompilation().apply {
-            sources = sourceFiles
-            useIR = false
+            sources = sourceFiles + material
+//            useIR = false
             compilerPluginRegistrars = listOf(plugin)
             pluginOptions = listOf(
                 PluginOption(
@@ -71,7 +91,18 @@ fun debug() = "Hello, World!"
         sourceFile: SourceFile,
         plugin: CompilerPluginRegistrar = CopyBuilderCompilerPluginRegistrar(),
         commandLineProcessor: CommandLineProcessor = CopyBuilderCommandLineProcessor()
-    ): KotlinCompilation.Result {
+    ): CompilationResult {
         return compile(listOf(sourceFile), plugin, commandLineProcessor)
     }
 }
+
+private val material = kotlin(
+    "KopyBuilder.kt",
+    """
+//package io.github.windedge.copybuilder
+//
+//@Retention(AnnotationRetention.SOURCE)
+//@Target(AnnotationTarget.CLASS)
+//annotation class KopyBuilder
+    """,
+)

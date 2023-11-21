@@ -7,7 +7,8 @@ poet = "1.14.2"
 buildconfig = "4.1.1"
 test-kotest = "5.6.1"
 test-strikt = "0.34.1"
-test-kotlin-compilation-ksp = "1.5.0"
+test-kotlin-compilation = "1.5.0"
+test-kctfork = "0.4.0"
 android-library = "7.4.2"
 
 
@@ -21,7 +22,8 @@ poet = { module = "com.squareup:kotlinpoet", version.ref = "poet" }
 
 test-kotest-framework = { module = "io.kotest:kotest-runner-junit5", version.ref = "test-kotest" }
 test-strikt = { module = "io.strikt:strikt-core", version.ref = "test-strikt" }
-test-kotlin-compilation = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "test-kotlin-compilation-ksp" }
+test-kotlin-compilation = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "test-kotlin-compilation" }
+test-kctfork-core = { module = "dev.zacsweers.kctfork:core", version.ref = "test-kctfork" }
 
 
 [plugins]

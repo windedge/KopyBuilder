@@ -26,7 +26,7 @@ dependencies {
 
     testImplementation(libs.test.kotest.framework)
     testImplementation(libs.test.strikt)
-    testImplementation(libs.test.kotlin.compilation)
+    testImplementation(libs.test.kctfork.core)
 }
 
 val shadowJar = tasks.shadowJar.apply {
