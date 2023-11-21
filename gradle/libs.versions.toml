@@ -1,0 +1,33 @@
+[versions]
+maven-publish = "0.25.2"
+autoservice-annotation = "1.1.1"
+autoservice-processor = "1.1.0"
+kotlin-core = "1.9.20"
+poet = "1.14.2"
+buildconfig = "4.1.1"
+test-kotest = "5.6.1"
+test-strikt = "0.34.1"
+test-kotlin-compilation-ksp = "1.5.0"
+android-library = "7.4.2"
+
+
+[libraries]
+autoservice-annotation = { module = "com.google.auto.service:auto-service-annotations", version.ref = "autoservice-annotation" }
+autoservice-processor = { module = "dev.zacsweers.autoservice:auto-service-ksp", version.ref = "autoservice-processor" }
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin-core" }
+kotlin-embeddable-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin-core" }
+kotlin-gradle-plugin-api = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin-api", version.ref = "kotlin-core" }
+poet = { module = "com.squareup:kotlinpoet", version.ref = "poet" }
+
+test-kotest-framework = { module = "io.kotest:kotest-runner-junit5", version.ref = "test-kotest" }
+test-strikt = { module = "io.strikt:strikt-core", version.ref = "test-strikt" }
+test-kotlin-compilation = { module = "com.github.tschuchortdev:kotlin-compile-testing", version.ref = "test-kotlin-compilation-ksp" }
+
+
+[plugins]
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-core" }
+kotlin-kmp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin-core" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version.ref = "buildconfig" }
+android-library = { id = "com.android.library", version.ref = "android-library" }
+mavenShadow = { id = "com.github.johnrengelman.shadow", version = "8.1.1" }

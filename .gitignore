@@ -1,0 +1,7 @@
+build/
+.fleet
+.idea/
+*.iml
+.gradle
+local.properties
+**/*.kotlin_builtins
