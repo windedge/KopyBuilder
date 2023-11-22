@@ -71,7 +71,6 @@ fun ClassDescriptor.propertiesMap(): PropertySpec {
 fun ClassDescriptor.privatePropertiesSet(): PropertySpec {
     val properties = this.privateProperties
     val names = properties.map {
-        val type = it.type.toClassName() ?: it.fqNameSafe
         CodeBlock.of("%S", it.name.asString())
     }.joinToCode(", ")
     return PropertySpec.builder("privateProperties", SET.parameterizedBy(STRING))
