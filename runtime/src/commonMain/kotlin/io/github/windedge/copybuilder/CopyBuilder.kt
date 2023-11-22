@@ -15,9 +15,9 @@ public interface CopyBuilderFactory<T> {
         TODO("Implemented in KopyBuilder Plugin")
     }
 
-    public fun copyBuild(build: CopyBuilder<T>.() -> Unit): T {
+    public fun copyBuild(initialize: CopyBuilder<T>.() -> Unit): T {
         val builder = toCopyBuilder()
-        builder.build()
+        builder.initialize()
         return builder.build()
     }
 }
