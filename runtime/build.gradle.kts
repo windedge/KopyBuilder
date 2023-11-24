@@ -18,8 +18,8 @@ kotlin {
         nodejs()
     }
 
-    androidTarget {
-//    android {
+//    androidTarget {
+    android {
         publishLibraryVariants("release", "debug")
     }
 
@@ -39,11 +39,11 @@ kotlin {
         }
     */
 
-
     sourceSets {
         val commonMain by getting {
             dependencies {
                 compileOnly(kotlin("stdlib"))
+                compileOnly(kotlin("reflect"))
             }
         }
     }

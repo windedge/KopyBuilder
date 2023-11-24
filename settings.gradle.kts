@@ -21,7 +21,6 @@ pluginManagement {
 
 include(
     ":runtime",
-//    ":ksp",
     ":compiler",
     ":gradle-plugin",
 )

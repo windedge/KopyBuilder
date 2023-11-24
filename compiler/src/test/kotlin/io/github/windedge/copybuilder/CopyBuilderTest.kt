@@ -1,6 +1,7 @@
 package io.github.windedge.copybuilder
 
 import com.tschuchort.compiletesting.*
+import com.tschuchort.compiletesting.KotlinCompilation.*
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.engine.spec.tempdir
@@ -26,7 +27,7 @@ fun main() {
 
 fun debug() = "Hello, World!"
 """))
-            Assertions.assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+            Assertions.assertEquals(ExitCode.OK, result.exitCode)
         }
 
         "should be generated" {
@@ -49,7 +50,7 @@ fun main() {
 
 """))
 
-            Assertions.assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode)
+            Assertions.assertEquals(ExitCode.OK, result.exitCode)
         }
     }
 

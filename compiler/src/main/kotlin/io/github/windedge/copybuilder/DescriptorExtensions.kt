@@ -2,9 +2,7 @@ package io.github.windedge.copybuilder
 
 import com.squareup.kotlinpoet.ClassName
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
-import org.jetbrains.kotlin.descriptors.CallableMemberDescriptor
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
+import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.resolve.descriptorUtil.classId
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
@@ -23,6 +21,16 @@ val ClassDescriptor.properties
             // Remove inherited properties that aren't overridden in this class.
             it.kind == CallableMemberDescriptor.Kind.DECLARATION
         }
+
+val ClassDescriptor.functions
+    get() = unsubstitutedMemberScope
+        .getDescriptorsFiltered(kindFilter = DescriptorKindFilter.FUNCTIONS)
+        .filterIsInstance<FunctionDescriptor>()
+        .filter {
+            // Remove inherited properties that aren't overridden in this class.
+            it.kind == CallableMemberDescriptor.Kind.DECLARATION
+        }
+
 
 fun ClassDescriptor.toClassName(): ClassName {
     return ClassName(this.findPackage().fqName.asString(), this.name.asString())

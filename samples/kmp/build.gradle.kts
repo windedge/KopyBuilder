@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id(libs.plugins.kotlin.kmp.get().pluginId)
     id("io.github.windedge.kopybuilder")
-    `application`
+    application
 }
 
 application {

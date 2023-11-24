@@ -29,7 +29,6 @@ includeBuild("../.") {
         substitute(module("$group:copybuilder-runtime")).using(project(":runtime"))
         substitute(module("$group:copybuilder-compiler")).using(project(":compiler"))
         substitute(module("$group:copybuilder-gradle")).using(project(":gradle-plugin"))
-//        substitute(module("$group:copybuilder-ksp")).using(project(":ksp"))
     }
 }
 

@@ -24,10 +24,9 @@ fun main() {
 
     if (CopyBuilderFactory::class.isInstance(person)) {
         val builderFactory = person as CopyBuilderFactory<*>
-        val builder = builderFactory.toCopyBuilder()
-        println("builder = ${builder}")
-        builder.put("name", "Max")
-        val person2 = builder.build()
+        val person2 = builderFactory.copyBuild {
+            put("name", "Max")
+        }
         println("person2 = ${person2}")
     }
 

@@ -7,7 +7,11 @@ import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.com.intellij.openapi.extensions.ExtensionPoint
 import org.jetbrains.kotlin.com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.com.intellij.psi.PsiManager
+import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
+import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -19,7 +23,6 @@ import org.jetbrains.kotlin.resolve.extensions.AnalysisHandlerExtension
 import java.nio.file.Files
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.notExists
-import kotlin.system.measureTimeMillis
 
 
 class CopyBuilderAnalysisHandlerExtension(
@@ -58,24 +61,19 @@ class CopyBuilderAnalysisHandlerExtension(
             Files.createDirectories(outputDir.toPath())
         }
 
-        val ungeneratedAnnotatedClasses =
-            bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values.filter {
-                it.needsToBeGenerated()
-            }
-        measureTimeMillis {
-            ungeneratedAnnotatedClasses.forEach { c ->
-                val path = c.toGeneratedCopyBuilderPath(outputDir.toPath())
-                messageCollector.report(CompilerMessageSeverity.WARNING, "path = ${path}")
-                val file = c.generateImplClass()
-                file.writeTo(outputDir)
-            }
-        }.also {
-            messageCollector.report(CompilerMessageSeverity.WARNING, "analysisCompleted: time  = ${it}ms")
+        val ungeneratedAnnotatedClasses = bindingTrace.bindingContext
+            .getSliceContents(BindingContext.CLASS).values.filter { it.needsToBeGenerated() }
+
+        if (ungeneratedAnnotatedClasses.isEmpty()) {
+            return null
         }
 
-        return if (ungeneratedAnnotatedClasses.isEmpty()) {
-            null
-        } else AnalysisResult.RetryWithAdditionalRoots(
+        ungeneratedAnnotatedClasses.forEach { c ->
+            val file = c.generateImplClass()
+            file.writeTo(outputDir)
+        }
+
+        return AnalysisResult.RetryWithAdditionalRoots(
             bindingContext = BindingContext.EMPTY,
             moduleDescriptor = module,
             additionalKotlinRoots = listOf(outputDir),

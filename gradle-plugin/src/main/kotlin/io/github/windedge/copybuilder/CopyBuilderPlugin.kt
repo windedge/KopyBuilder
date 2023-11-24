@@ -4,6 +4,7 @@ package io.github.windedge.copybuilder
 
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
@@ -39,31 +40,31 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
 //                it.add("implementation", "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.9.0-1.0.11")
 //            }
             dependencies.add("implementation", runtimeArtifact)
-
 //            dependencies.add("ksp", kspArtifact)
-//            val generatedSrcDir = "build/generated/ksp/main/kotlin"
-//            val jvm = extensions.getByType(KotlinJvmProjectExtension::class.java)
-//            jvm.sourceSets.named("main") {
-//                it.kotlin.srcDir(generatedSrcDir)
-//            }
-//            jvm.sourceSets.named("test") {
-//                it.kotlin.srcDir(generatedSrcDir)
-//            }
+
+            val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
+            val jvm = extensions.getByType(KotlinJvmProjectExtension::class.java)
+            jvm.sourceSets.named("main") {
+                it.kotlin.srcDir(generatedSrcDir)
+            }
+            jvm.sourceSets.named("test") {
+                it.kotlin.srcDir(generatedSrcDir)
+            }
 
         }
 
         plugins.withId("org.jetbrains.kotlin.android") {
             dependencies.add("implementation", runtimeArtifact)
-
 //            dependencies.add("ksp", kspArtifact)
-//            val generatedSrcDir = "build/generated/ksp/main/kotlin"
-//            val sourceSets = extensions.getByName("sourceSets") as org.gradle.api.tasks.SourceSetContainer
-//            sourceSets.named("main") {
-//                it.java.srcDir(generatedSrcDir)
-//            }
-//            sourceSets.named("test") {
-//                it.java.srcDir(generatedSrcDir)
-//            }
+
+            val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
+            val sourceSets = extensions.getByName("sourceSets") as org.gradle.api.tasks.SourceSetContainer
+            sourceSets.named("main") {
+                it.java.srcDir(generatedSrcDir)
+            }
+            sourceSets.named("test") {
+                it.java.srcDir(generatedSrcDir)
+            }
         }
 
         plugins.withId("org.jetbrains.kotlin.multiplatform") {
@@ -81,11 +82,13 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
                         }
                     }
 
-//                    kotlinExtension.sourceSets.filterNot { it.name.startsWith("common") }.forEach {
-//                        with(it) {
-//                            kotlin.srcDir("build/generated/ksp/${name.substringBefore("Main")}/${name}/kotlin")
-//                        }
-//                    }
+                    kotlinExtension.sourceSets.filterNot { it.name.startsWith("common") || it.name.contains("Test") }
+                        .forEach {
+                            with(it) {
+                                val path = "build/generated/kopybuilder/${name.substringBefore("Main")}/${name}/kotlin"
+                                kotlin.srcDir(path)
+                            }
+                        }
                 }
             }
         }

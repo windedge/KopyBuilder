@@ -23,6 +23,7 @@ dependencies {
     embedded(libs.poet)
 
     compileOnly(libs.kotlin.embeddable.compiler)
+//    compileOnly(libs.kotlin.compiler)
 
     testImplementation(libs.test.kotest.framework)
     testImplementation(libs.test.strikt)

@@ -35,7 +35,6 @@ subprojects {
             val currentVersion = properties["VERSION_NAME"].toString()
 
             val runtimeArtifactId = "copybuilder-runtime"
-            val kspArtifactId = "copybuilder-ksp"
             val compilerArtifactId = "copybuilder-compiler"
             val compilerPluginId = "$groupId.compiler"
 
@@ -45,7 +44,6 @@ subprojects {
             buildConfigField("String", "groupId", "\"$groupId\"")
             buildConfigField("String", "currentVersion", "\"$currentVersion\"")
             buildConfigField("String", "runtimeArtifactId", "\"$runtimeArtifactId\"")
-            buildConfigField("String", "kspArtifactId", "\"$kspArtifactId\"")
             buildConfigField("String", "compilerArtifactId", "\"$compilerArtifactId\"")
             buildConfigField("String", "compilerPluginId", "\"$compilerPluginId\"")
         }
