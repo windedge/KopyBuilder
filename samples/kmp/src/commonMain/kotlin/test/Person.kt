@@ -1,7 +1,5 @@
 package test
 
-import io.github.windedge.copybuilder.CopyBuilder
-import io.github.windedge.copybuilder.CopyBuilderFactory
 import io.github.windedge.copybuilder.KopyBuilder
 
 @KopyBuilder

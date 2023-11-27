@@ -9,7 +9,7 @@ public interface CopyBuilder<T> {
     public fun build(): T
 }
 
-public interface CopyBuilderFactory<T> {
+public interface CopyBuilderHost<T> {
     public fun toCopyBuilder(): CopyBuilder<T> {
         TODO("Implemented in KopyBuilder Plugin")
     }

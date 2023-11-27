@@ -2,7 +2,7 @@
 
 package test
 
-import io.github.windedge.copybuilder.CopyBuilderFactory
+import io.github.windedge.copybuilder.CopyBuilderHost
 
 fun main() {
     val person = Person("Karl", "kmarx@gmail.com", 68)
@@ -22,9 +22,9 @@ fun main() {
 
     println("person.javaClass.interfaces = ${person.javaClass.interfaces.joinToString { it.name }}")
 
-    if (CopyBuilderFactory::class.isInstance(person)) {
-        val builderFactory = person as CopyBuilderFactory<*>
-        val person2 = builderFactory.copyBuild {
+    if (CopyBuilderHost::class.isInstance(person)) {
+        val builderHost = person as CopyBuilderHost<*>
+        val person2 = builderHost.copyBuild {
             put("name", "Max")
         }
         println("person2 = ${person2}")

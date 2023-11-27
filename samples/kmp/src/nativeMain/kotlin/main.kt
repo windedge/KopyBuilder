@@ -2,14 +2,14 @@
 
 package test
 
-import io.github.windedge.copybuilder.CopyBuilderFactory
+import io.github.windedge.copybuilder.CopyBuilderHost
 
 fun main() {
     val person = Person("Carl", "kmarx@gmail.com", 68)
     println("hello $person!")
 
-    if (CopyBuilderFactory::class.isInstance(person)) {
-        val builderFactory = person as CopyBuilderFactory<Person>
+    if (CopyBuilderHost::class.isInstance(person)) {
+        val builderFactory = person as CopyBuilderHost<Person>
         val person2 = builderFactory.copyBuild {
             put("name", "Max")
         }
