@@ -2,10 +2,7 @@ package io.github.windedge.copybuilder.ir
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import io.github.windedge.copybuilder.CopyBuilder
-import io.github.windedge.copybuilder.getImplClassName
-import io.github.windedge.copybuilder.properties
-import io.github.windedge.copybuilder.toClassName
+import io.github.windedge.copybuilder.*
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
@@ -28,9 +25,10 @@ fun ClassDescriptor.generateImplClass(): FileSpec {
     val simpleName = this.name.asString()
     val dataClassName = this.toClassName()
     val builderClassName = ClassName(packageName, getImplClassName(simpleName))
+    val fileName = getImplFileName(simpleName)
     val copyBuilderClassName = CopyBuilder::class.asClassName()
 
-    return FileSpec.builder(packageName, "${simpleName}CopyBuilder")
+    return FileSpec.builder(packageName, fileName)
         .addImport(copyBuilderClassName, "")
         .addImport(packageName, simpleName)
         .addType(
@@ -50,7 +48,7 @@ fun ClassDescriptor.generateImplClass(): FileSpec {
 
         )
         .addFunction(toBuilderExtension(builderClassName))
-        .addFunction(copyBuildExtension(builderClassName))
+        .addFunction(copyBuildExtension())
         .build()
 }
 
@@ -64,7 +62,7 @@ fun ClassDescriptor.toBuilderExtension(builderClassName: ClassName): FunSpec {
         .build()
 }
 
-fun ClassDescriptor.copyBuildExtension(builderClassName: ClassName): FunSpec {
+fun ClassDescriptor.copyBuildExtension(): FunSpec {
     val copyBuilderName = toParameterizedCopyBuilderName()
     val lambdaType = LambdaTypeName.get(copyBuilderName, returnType = UNIT)
 

@@ -2,16 +2,14 @@
 
 package io.github.windedge.copybuilder
 
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.compiler.plugin.AbstractCliOption
 import org.jetbrains.kotlin.compiler.plugin.CliOption
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.CompilerConfigurationKey
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.Path
 
 internal val KEY_ENABLED = CompilerConfigurationKey<Boolean>(
     "Whether to disable copy() generation - default is true",
@@ -21,7 +19,7 @@ internal val KEY_VERBOSE = CompilerConfigurationKey<Boolean>(
     "Whether to enabled verbose logging - default is false",
 )
 
-internal val KEY_OUTPUT_DIR = CompilerConfigurationKey<File>(
+internal val KEY_OUTPUT_DIR = CompilerConfigurationKey<Path>(
     "Where to output generated source files - default is <empty>"
 )
 
@@ -66,7 +64,7 @@ class CopyBuilderCommandLineProcessor : CommandLineProcessor {
         when (val optionName = option.optionName) {
             OPTION_ENABLED.optionName -> configuration.put(KEY_ENABLED, value.toBooleanStrict())
             OPTION_VERBOSE.optionName -> configuration.put(KEY_VERBOSE, value.toBooleanStrict())
-            OPTION_OUTPUT_DIR.optionName -> configuration.put(KEY_OUTPUT_DIR, File(value))
+            OPTION_OUTPUT_DIR.optionName -> configuration.put(KEY_OUTPUT_DIR, Path(value))
             else -> error("Unknown plugin option: $optionName")
         }
     }

@@ -42,14 +42,16 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
             dependencies.add("implementation", runtimeArtifact)
 //            dependencies.add("ksp", kspArtifact)
 
-            val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
-            val jvm = extensions.getByType(KotlinJvmProjectExtension::class.java)
-            jvm.sourceSets.named("main") {
-                it.kotlin.srcDir(generatedSrcDir)
-            }
-            jvm.sourceSets.named("test") {
-                it.kotlin.srcDir(generatedSrcDir)
-            }
+            /*
+                        val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
+                        val jvm = extensions.getByType(KotlinJvmProjectExtension::class.java)
+                        jvm.sourceSets.named("main") {
+                            it.kotlin.srcDir(generatedSrcDir)
+                        }
+                        jvm.sourceSets.named("test") {
+                            it.kotlin.srcDir(generatedSrcDir)
+                        }
+            */
 
         }
 
@@ -57,14 +59,15 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
             dependencies.add("implementation", runtimeArtifact)
 //            dependencies.add("ksp", kspArtifact)
 
-            val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
-            val sourceSets = extensions.getByName("sourceSets") as org.gradle.api.tasks.SourceSetContainer
-            sourceSets.named("main") {
-                it.java.srcDir(generatedSrcDir)
-            }
-            sourceSets.named("test") {
-                it.java.srcDir(generatedSrcDir)
-            }
+            /*            val generatedSrcDir = "build/generated/kopybuilder/main/kotlin"
+                        val sourceSets = extensions.getByName("sourceSets") as org.gradle.api.tasks.SourceSetContainer
+                        sourceSets.named("main") {
+                            it.java.srcDir(generatedSrcDir)
+                        }
+                        sourceSets.named("test") {
+                            it.java.srcDir(generatedSrcDir)
+                        }
+             */
         }
 
         plugins.withId("org.jetbrains.kotlin.multiplatform") {
@@ -82,6 +85,7 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
                         }
                     }
 
+/*
                     kotlinExtension.sourceSets.filterNot { it.name.startsWith("common") || it.name.contains("Test") }
                         .forEach {
                             with(it) {
@@ -89,6 +93,7 @@ class CopyBuilderPlugin : KotlinCompilerPluginSupportPlugin {
                                 kotlin.srcDir(path)
                             }
                         }
+*/
                 }
             }
         }

@@ -46,7 +46,7 @@ fun main() {
 
 private fun tryLoadingClass(className: String) {
     runCatching {
-        val clazz = Person::class.java.classLoader.loadClass(className)
+        val clazz = Person::class.java.classLoader?.loadClass(className)
         println("clazz = ${clazz}")
     }.onFailure(::println)
 }

@@ -7,11 +7,7 @@ import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.com.intellij.openapi.extensions.ExtensionPoint
 import org.jetbrains.kotlin.com.intellij.openapi.project.Project
-import org.jetbrains.kotlin.com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
-import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -20,9 +16,9 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.extensions.AnalysisHandlerExtension
+import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 import java.nio.file.Files
-import kotlin.io.path.getLastModifiedTime
-import kotlin.io.path.notExists
+import kotlin.io.path.*
 
 
 class CopyBuilderAnalysisHandlerExtension(
@@ -51,6 +47,21 @@ class CopyBuilderAnalysisHandlerExtension(
         }
     */
 
+    /*
+        val psiManager = PsiManager.getInstance(project)
+        if (didRecompile) {
+            psiManager.dropPsiCaches()
+            return null
+        } else {
+            project.extensionArea.registerExtensionPoint(
+                PsiTreeChangeListener.EP.name,
+                PsiTreeChangeAdapter::class.java.canonicalName,
+                ExtensionPoint.Kind.INTERFACE
+            )
+            didRecompile = true
+        }
+*/
+
     override fun analysisCompleted(
         project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
     ): AnalysisResult? {
@@ -58,17 +69,36 @@ class CopyBuilderAnalysisHandlerExtension(
         didRecompile = true
 
         if (!outputDir.exists()) {
-            Files.createDirectories(outputDir.toPath())
+            Files.createDirectories(outputDir)
         }
 
-        val ungeneratedAnnotatedClasses = bindingTrace.bindingContext
-            .getSliceContents(BindingContext.CLASS).values.filter { it.needsToBeGenerated() }
+        val cachedFiles = outputDir.toFile().walkTopDown().filter {
+            it.isFile && it.startsWith(outputDir.pathString)
+        }.map { it.toPath() }.toMutableList()
 
-        if (ungeneratedAnnotatedClasses.isEmpty()) {
+        val (outdatedAnnotatedClasses, uptodateAnnotatedClasses) =
+            bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values
+                .filter { it.isAnnotatedClass() }
+                .partition { it.isOutdatedClass() }
+
+        // delete outdated cached files
+        val uptodateCacheFiles = uptodateAnnotatedClasses.map { it.toGeneratedCopyBuilderPath(outputDir).absolute() }
+        cachedFiles.filter { it !in uptodateCacheFiles }.ifNotEmpty {
+            this.forEach { it.deleteIfExists() }
+            return AnalysisResult.RetryWithAdditionalRoots(
+                bindingContext = BindingContext.EMPTY,
+                moduleDescriptor = module,
+                additionalKotlinRoots = emptyList(),
+                additionalJavaRoots = emptyList(),
+                addToEnvironment = true
+            )
+        }
+
+        if (outdatedAnnotatedClasses.isEmpty()) {
             return null
         }
 
-        ungeneratedAnnotatedClasses.forEach { c ->
+        outdatedAnnotatedClasses.forEach { c ->
             val file = c.generateImplClass()
             file.writeTo(outputDir)
         }
@@ -76,13 +106,13 @@ class CopyBuilderAnalysisHandlerExtension(
         return AnalysisResult.RetryWithAdditionalRoots(
             bindingContext = BindingContext.EMPTY,
             moduleDescriptor = module,
-            additionalKotlinRoots = listOf(outputDir),
+            additionalKotlinRoots = listOf(outputDir.toFile()),
             additionalJavaRoots = emptyList(),
             addToEnvironment = true
         )
     }
 
-    private fun ClassDescriptor.needsToBeGenerated(): Boolean {
+    private fun ClassDescriptor.isAnnotatedClass(): Boolean {
         if (!annotations.hasAnnotation(annotationFqName)) return false
 
         if (!isData) {
@@ -92,8 +122,11 @@ class CopyBuilderAnalysisHandlerExtension(
             )
             return false
         }
+        return true
+    }
 
-        val generatedPath = toGeneratedCopyBuilderPath(outputDir.toPath())
+    private fun ClassDescriptor.isOutdatedClass(): Boolean {
+        val generatedPath = toGeneratedCopyBuilderPath(outputDir)
         if (generatedPath.notExists()) return true
 
         val sourceTimestamp = psiElement?.containingFile?.virtualFile?.timeStamp ?: 0L

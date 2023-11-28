@@ -61,7 +61,7 @@ fun ClassDescriptor.toGeneratedCopyBuilderPath(
     Files.createDirectories(outputDirectory)
 
     val name = if (buildClassName == null) {
-        "${this.name.asString()}CopyBuilderImpl"
+        getImplFileName(this.name.asString())
     } else {
         this.buildClassName()
     }

@@ -3,7 +3,7 @@
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.kmp) apply false
-    id("io.github.windedge.kopybuilder") version "0.1.0-SNAPSHOT" apply false
+    id("io.github.windedge.kopybuilder") version "<edge>" apply false
 }
 
 repositories {
