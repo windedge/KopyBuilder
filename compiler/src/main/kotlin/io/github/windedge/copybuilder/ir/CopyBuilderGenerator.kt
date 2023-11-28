@@ -47,8 +47,39 @@ fun ClassDescriptor.generateImplClass(): FileSpec {
                 .addFunction(setterFunction())
                 .addFunction(builderFunction())
                 .build()
-        ).build()
+
+        )
+        .addFunction(toBuilderExtension(builderClassName))
+        .addFunction(copyBuildExtension(builderClassName))
+        .build()
 }
+
+
+fun ClassDescriptor.toBuilderExtension(builderClassName: ClassName): FunSpec {
+    val copyBuilderName = toParameterizedCopyBuilderName()
+    return FunSpec.builder("toCopyBuilder")
+        .receiver(this.toClassName())
+        .returns(copyBuilderName)
+        .addStatement("return %T(%L)", builderClassName, "this")
+        .build()
+}
+
+fun ClassDescriptor.copyBuildExtension(builderClassName: ClassName): FunSpec {
+    val copyBuilderName = toParameterizedCopyBuilderName()
+    val lambdaType = LambdaTypeName.get(copyBuilderName, returnType = UNIT)
+
+    return FunSpec.builder("copyBuild")
+        .receiver(this.toClassName())
+        .addParameter("initialize", lambdaType)
+        .returns(this.toClassName())
+        .addStatement("val builder = %L()", "toCopyBuilder")
+        .addStatement("builder.%L()", "initialize")
+        .addStatement("return %L.%L()", "builder", "build")
+        .build()
+}
+
+private fun ClassDescriptor.toParameterizedCopyBuilderName() =
+    CopyBuilder::class.asClassName().parameterizedBy(this.toClassName())
 
 
 private fun valueMap() =

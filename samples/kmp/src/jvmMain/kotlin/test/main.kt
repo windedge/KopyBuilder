@@ -1,4 +1,3 @@
-@file:Suppress("CAST_NEVER_SUCCEEDS")
 
 package test
 
@@ -16,19 +15,32 @@ fun main() {
     tryLoadingClass("test.PersonCopyBuilderImpl")
     tryLoadingClass("Generated")
 
-//    val builder = PersonCopyBuilderImpl()
-
     println("hello $person!")
 
     println("person.javaClass.interfaces = ${person.javaClass.interfaces.joinToString { it.name }}")
 
+    val person2 = person.copyBuild {
+        put("name", "Marco")
+        put("email", "hello@world")
+    }
+    println("person2 = ${person2}")
+
+
     if (CopyBuilderHost::class.isInstance(person)) {
-        val builderHost = person as CopyBuilderHost<*>
-        val person2 = builderHost.copyBuild {
+        @Suppress("CAST_NEVER_SUCCEEDS")
+        val host = person as CopyBuilderHost<Person>
+        val person3 = host.copyBuild {
             put("name", "Max")
         }
-        println("person2 = ${person2}")
+        println("person3 = ${person3}")
     }
+
+    @Suppress("CAST_NEVER_SUCCEEDS")
+    val person4 = (person as CopyBuilderHost<Person>).copyBuild {
+        put("name", "Carlos")
+    }
+    println("person4 = ${person4}")
+
 
 }
 

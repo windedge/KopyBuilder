@@ -35,14 +35,14 @@ fun debug() = "Hello, World!"
                 sourceFile = kotlin(
                     "main.kt", """
 import io.github.windedge.copybuilder.KopyBuilder
-import io.github.windedge.copybuilder.CopyBuilderFactory
+import io.github.windedge.copybuilder.CopyBuilderHost
 
 @KopyBuilder
 data class Fruit(val name: String)
 
 fun main() {
     val fruit = Fruit("apple")
-    val fruit2 = (fruit as CopyBuilderFactory<Fruit>).copyBuild {
+    val fruit2 = (fruit as CopyBuilderHost<Fruit>).copyBuild {
         put("name", "Pear")
     }
     println("fruit2 = " + fruit2)

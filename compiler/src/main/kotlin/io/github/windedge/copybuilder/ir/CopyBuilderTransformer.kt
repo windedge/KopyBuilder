@@ -33,10 +33,10 @@ class CopyBuilderTransformer(
         val hasAnnotation = declaration.annotations.hasAnnotation(annotationFqName)
         if (!hasAnnotation) return klass
 
-        val copyBuilderFactoryClass: IrClassSymbol =
-            context.referenceClass(CopyBuilderFqn.child(Name.identifier("CopyBuilderFactory")))
-                ?: error("Class: CopyBuilderFactory cannot be found!")
-        val parameterizedFactoryType = copyBuilderFactoryClass.typeWith(klass.defaultType)
+        val copyBuilderHostClass: IrClassSymbol =
+            context.referenceClass(CopyBuilderFqn.child(Name.identifier("CopyBuilderHost")))
+                ?: error("Class: CopyBuilderHost cannot be found!")
+        val parameterizedFactoryType = copyBuilderHostClass.typeWith(klass.defaultType)
         klass.superTypes += parameterizedFactoryType
 
         val copyBuilderClass = context.referenceClass(CopyBuilderFqn.child(Name.identifier("CopyBuilder")))
@@ -45,7 +45,7 @@ class CopyBuilderTransformer(
 
         val toCopyBuilderFunc = klass.addFunc("toCopyBuilder", parameterizedType, Modality.OPEN).apply {
             val superFunc =
-                copyBuilderFactoryClass.functions.singleOrNull { it.descriptor.name.asString() == "toCopyBuilder" }
+                copyBuilderHostClass.functions.singleOrNull { it.descriptor.name.asString() == "toCopyBuilder" }
                     ?: error("Function not found: toCopyBuilder")
             this.overriddenSymbols += superFunc
 
@@ -70,7 +70,7 @@ class CopyBuilderTransformer(
 
         klass.addFunc("copyBuild", klass.defaultType, Modality.OPEN).apply {
             val superFunc =
-                copyBuilderFactoryClass.functions.singleOrNull { it.descriptor.name.asString() == "copyBuild" }
+                copyBuilderHostClass.functions.singleOrNull { it.descriptor.name.asString() == "copyBuild" }
                     ?: error("Function not found: copyBuild");
             overriddenSymbols += superFunc
 
