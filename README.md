@@ -1,92 +1,85 @@
-# KotlinDataClassCopyBuilder
+# KopyBuilder
 
-> Suppress the generation of the `copy()` function in Kotlin's `data class`.
-
-Kotlin's `data class` is a really cool feature that automatically generates useful functions like `equals`, `hashCode`, `copy`, and `componentN`.
-
-However, sometimes you want all the benefits of the `data class` but not the `copy()` function.
-
-For example, code like this:
-
-```kotlin
-data class Adult private constructor(
-  val age: Int,
-  val name: String,
-) {
-  companion object {
-    fun from(name: String): Adult {
-      return if (name == "Zohn") {
-        Adult(age = 49, name = "Zohn")
-      } else {
-        error("No one allowed except \"Zohn\".")
-      }
-    }
-  }
-}
-```
-
-This `data class` only accepts the name "Zohn", but the auto-generated `copy()` function allows you to bypass this condition and create a new instance.
-
-```kotlin
-val Zosh = Adult.from("Zohn").copy(age = 21, name = "Zosh")
-```
-
-With this library, the `copy()` function of `data class` is no longer accessible.
-
-```
-Unresolved reference: copy
-```
-
----
+This is a compiler plugin that generates a builder class for Kotlin's `data class`. You can `get` and `put` properties from the builder, similar to a `Map`, and finally `build` the object.
 
 ## Usage
 
-Apply the `@CopyBuilder` annotation to `data class`.
+### Gradle Setup
 
-```kotlin
-@io.github.windedge.copybuilder.CopyBuilder
-data class Adult private constructor(
-  val age: Int,
-  val name: String,
-) {
-  companion object {
-    fun from(name: String): Adult {
-      return if (name == "Zohn") {
-        Adult(age = 49, name = "Zohn")
-      } else {
-        error("No one allowed except \"Zohn\".")
-      }
-    }
-  }
-}
+Currently, it supports Kotlin versions 1.8 and 1.9.
+
 ```
-
-You can configure plugin with properties on the `kopybuilder` extension.
-
-```kotlin
-kopybuilder {
-  // Whether CopyBuilder is enabled
-  enabled.set(true) // default
-
-  // Whether to show verbose logging
-  verbose.set(false) // default
-}
-```
-
-## Download ![maven-central](https://img.shields.io/maven-central/v/io.github.windedge.copybuilder/copybuilder-gradle)
-
-- Kotlin 1.8.20: `1.0.x`
-
-```gradle
 plugins {
-  id("io.github.windedge.copybuilder.plugin") version "$version"
+    id("io.github.windedge.kopybuilder") version "$version"
 }
 ```
 
-## Caveats
+[//]: # (#### Download ![maven-central]&#40;https://img.shields.io/nexus/snapshots/https/s01.oss.sonatype.org/io.github.windedge.copybuilder/kopybuilder&#41;)
 
-- Interaction with IDEs is not yet supported. (there is no public API to handle this)
-- This library uses the Kotlin Compiler Plugin, which is still unstable.
+
+### Code Generation
+
+For example, consider the following data class:
+
+```kotlin
+data class User(
+    val name: String,
+    val email: String?
+) 
+
+```
+
+It will generate code like this:
+
+```kotlin
+public class UserBuilder: io.github.windedge.copybuilder.CopyBuilder<User> {
+    override fun `get`(key: String): Any? {
+        //...
+    }
+    
+    override fun put(key: String, `value`: Any?) {
+        //...
+    }
+    
+    override fun build(): User = User(name = ..., email = ... )
+}
+
+User.toCopyBuilder(): CopyBuilder<User> = ...
+User.copyBuild(initialize: CopyBuilder<User>.() -> Unit): User
+```
+
+You can use it as follows:
+
+```kotlin
+val user = User(...)
+val builder = user.toCopyBuilder()        
+builder.apply {
+    put("name", ...)
+    put("email", ...)
+}
+val newUser = builder.build()
+
+// Or build with copyBuild directly
+val newUser = user.copyBuild {
+    put("name", ...)
+}
+
+```
+
+You can even use it in a reflection way, making it possible to cooperate with 3rd party libraries:
+
+```kotlin
+import io.github.windedge.copybuilder.CopyBuilderHost
+
+if (CopyBuilderHost::class.isInstance(user)) {
+    @Suppress("CAST_NEVER_SUCCEEDS")
+    val host = user as CopyBuilderHost<ser>
+    val newUser = host.copyBuild {
+        put("name", "Max")
+    }
+}
+
+```
 
 ## License
 

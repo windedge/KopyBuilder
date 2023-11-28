@@ -4,6 +4,8 @@ import com.github.gmazzo.gradle.plugins.BuildConfigExtension
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
+import org.jetbrains.kotlin.gradle.plugin.extraProperties
+import java.util.*
 
 plugins {
     alias(libs.plugins.kotlin.jvm) apply false
@@ -64,10 +66,11 @@ subprojects {
                 }
         */
 
-//        extensions.configure<MavenPublishBaseExtension> {
-//            publishToMavenCentral(SonatypeHost.S01)
-//        }
+        /*
+                extensions.configure<MavenPublishBaseExtension> {
+                    publishToMavenCentral(SonatypeHost.S01)
+                }
+        */
+
     }
-
-
 }
