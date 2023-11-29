@@ -7,8 +7,6 @@ import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
-import org.jetbrains.kotlin.js.descriptorUtils.getKotlinTypeFqName
-import org.jetbrains.kotlin.resolve.descriptorUtil.classId
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import kotlin.reflect.KClass
 
@@ -124,8 +122,15 @@ private fun ClassDescriptor.builderFunction(): FunSpec {
 
     val blocks = parameters.map { param ->
         buildCodeBlock {
-            val typeName = param.type.constructor.declarationDescriptor?.classId?.toClassName()
-                ?: param.type.getKotlinTypeFqName(false)
+            val paramClassName = param.type.toClassName()
+                ?: error("can't figure out parameter's type, parameter: ${param.name}")
+
+            var typeName: TypeName = paramClassName
+            if (param.type.arguments.isNotEmpty()) {
+                val argumentTypes = param.type.arguments.mapNotNull { it.type.toClassName() }
+                typeName = paramClassName.parameterizedBy(argumentTypes)
+            }
+
             addStatement(
                 "%L = this.get(%S) as %T",
                 param.name.asString(),
@@ -133,11 +138,13 @@ private fun ClassDescriptor.builderFunction(): FunSpec {
                 typeName
             )
         }
-    }.joinToCode(", ")
+    }.joinToCode()
 
+    val suppress = AnnotationSpec.builder(Suppress::class).addMember("%S", "UNCHECKED_CAST").build()
     return FunSpec.builder("build")
         .addModifiers(KModifier.OVERRIDE)
         .returns(this.toClassName())
+        .addAnnotation(suppress)
         .addStatement("return %T(%L)", this.toClassName(), blocks)
         .build()
 }

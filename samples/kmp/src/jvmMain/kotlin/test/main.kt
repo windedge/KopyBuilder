@@ -5,26 +5,17 @@ import io.github.windedge.copybuilder.CopyBuilderHost
 
 fun main() {
     val person = Person("Karl", "kmarx@gmail.com", 68)
-
-//    val builder = PersonCopyBuilderImpl(person)
-//    builder.put("name", "karl")
-//    builder.put("age", 70)
-//    val person2 = builder.populate()
-
-    tryLoadingClass("test.PersonCopyBuilderX")
-    tryLoadingClass("test.PersonCopyBuilderImpl")
-    tryLoadingClass("Generated")
-
     println("hello $person!")
 
     println("person.javaClass.interfaces = ${person.javaClass.interfaces.joinToString { it.name }}")
+    tryLoadingClass("test.PersonCopyBuilderImpl")
+    tryLoadingClass("test.TodoListBuilderImpl")
 
     val person2 = person.copyBuild {
         put("name", "Marco")
         put("email", "hello@world")
     }
     println("person2 = ${person2}")
-
 
     if (CopyBuilderHost::class.isInstance(person)) {
         @Suppress("CAST_NEVER_SUCCEEDS")
