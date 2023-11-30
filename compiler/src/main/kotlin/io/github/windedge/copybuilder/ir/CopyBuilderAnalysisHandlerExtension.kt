@@ -5,9 +5,14 @@ import io.github.windedge.copybuilder.toGeneratedCopyBuilderPath
 import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.INFO
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.WARNING
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
+import org.jetbrains.kotlin.com.intellij.openapi.extensions.ExtensionPoint
 import org.jetbrains.kotlin.com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.com.intellij.psi.PsiManager
+import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
+import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -47,7 +52,9 @@ class CopyBuilderAnalysisHandlerExtension(
         }
     */
 
-    /*
+    override fun analysisCompleted(
+        project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
+    ): AnalysisResult? {
         val psiManager = PsiManager.getInstance(project)
         if (didRecompile) {
             psiManager.dropPsiCaches()
@@ -60,38 +67,41 @@ class CopyBuilderAnalysisHandlerExtension(
             )
             didRecompile = true
         }
-*/
-
-    override fun analysisCompleted(
-        project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
-    ): AnalysisResult? {
-        if (didRecompile) return null
-        didRecompile = true
+//        if (didRecompile) return null
+//        didRecompile = true
 
         if (!outputDir.exists()) {
             Files.createDirectories(outputDir)
         }
 
-        val cachedFiles = outputDir.toFile().walkTopDown().filter {
+        val generatedFiles = outputDir.toFile().walkTopDown().filter {
             it.isFile && it.startsWith(outputDir.pathString)
         }.map { it.toPath() }.toMutableList()
+        messageCollector.report(INFO, "generatedFiles = ${generatedFiles}")
 
+        val classes = bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values
         val (outdatedAnnotatedClasses, uptodateAnnotatedClasses) =
-            bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values
-                .filter { it.isAnnotatedClass() }
-                .partition { it.isOutdatedClass() }
+            classes.filter { it.isAnnotatedClass() }.partition { it.isOutdatedClass() }
 
-        // delete outdated cached files
-        val uptodateCacheFiles = uptodateAnnotatedClasses.map { it.toGeneratedCopyBuilderPath(outputDir).absolute() }
-        cachedFiles.filter { it !in uptodateCacheFiles }.ifNotEmpty {
+        messageCollector.report(INFO, "outdatedAnnotatedClasses = ${outdatedAnnotatedClasses}")
+        messageCollector.report(INFO, "uptodateAnnotatedClasses = ${uptodateAnnotatedClasses}")
+
+        // delete outdated generated files
+        val uptodateGeneratedFiles = uptodateAnnotatedClasses.map {
+            it.toGeneratedCopyBuilderPath(outputDir).absolute()
+        }
+        generatedFiles.filter { it !in uptodateGeneratedFiles }.ifNotEmpty {
+            messageCollector.report(WARNING, "outdatedFiles = ${this}")
             this.forEach { it.deleteIfExists() }
-            return AnalysisResult.RetryWithAdditionalRoots(
-                bindingContext = BindingContext.EMPTY,
-                moduleDescriptor = module,
-                additionalKotlinRoots = emptyList(),
-                additionalJavaRoots = emptyList(),
-                addToEnvironment = true
-            )
+            /*
+                        return AnalysisResult.RetryWithAdditionalRoots(
+                            bindingContext = BindingContext.EMPTY,
+                            moduleDescriptor = module,
+                            additionalKotlinRoots = listOf(outputDir.toFile()),
+                            additionalJavaRoots = emptyList(),
+                            addToEnvironment = true
+                        )
+            */
         }
 
         if (outdatedAnnotatedClasses.isEmpty()) {
@@ -116,10 +126,7 @@ class CopyBuilderAnalysisHandlerExtension(
         if (!annotations.hasAnnotation(annotationFqName)) return false
 
         if (!isData) {
-            messageCollector.report(
-                CompilerMessageSeverity.WARNING,
-                "${this.name} can't generate CopyBuilder, only support dataclass."
-            )
+            messageCollector.report(WARNING, "${this.name} can't generate CopyBuilder, only support dataclass.")
             return false
         }
         return true
