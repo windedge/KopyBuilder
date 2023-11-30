@@ -44,8 +44,8 @@ public class UserBuilder: io.github.windedge.copybuilder.CopyBuilder<User> {
     override fun build(): User = User(name = ..., email = ... )
 }
 
-User.toCopyBuilder(): CopyBuilder<User> = ...
-User.copyBuild(initialize: CopyBuilder<User>.() -> Unit): User
+fun User.toCopyBuilder(): CopyBuilder<User> = ...
+fun User.copyBuild(initialize: CopyBuilder<User>.() -> Unit): User { /*...*/ }
 ```
 
 You can use it as follows:
@@ -73,7 +73,7 @@ import io.github.windedge.copybuilder.CopyBuilderHost
 
 if (CopyBuilderHost::class.isInstance(user)) {
     @Suppress("CAST_NEVER_SUCCEEDS")
-    val host = user as CopyBuilderHost<ser>
+    val host = user as CopyBuilderHost<User>
     val newUser = host.copyBuild {
         put("name", "Max")
     }
