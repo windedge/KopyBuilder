@@ -8,6 +8,7 @@ import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
+import org.jetbrains.kotlin.types.isNullable
 import kotlin.reflect.KClass
 
 
@@ -128,6 +129,9 @@ private fun ClassDescriptor.builderFunction(): FunSpec {
             if (param.type.arguments.isNotEmpty()) {
                 val argumentTypes = param.type.arguments.mapNotNull { it.type.toClassName() }
                 typeName = paramClassName.parameterizedBy(argumentTypes)
+            }
+            if(param.type.isNullable()) {
+                typeName = typeName.copy(nullable = true)
             }
 
             addStatement(
