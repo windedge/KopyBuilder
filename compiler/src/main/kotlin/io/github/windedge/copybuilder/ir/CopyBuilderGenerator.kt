@@ -20,15 +20,14 @@ val ClassDescriptor.privateProperties: List<PropertyDescriptor>
 
 fun ClassDescriptor.generateImplClass(): FileSpec {
     val packageName = this.findPackage().fqName.asString()
-    val simpleName = this.name.asString()
     val dataClassName = this.toClassName()
-    val builderClassName = ClassName(packageName, getImplClassName(simpleName))
-    val fileName = getImplFileName(simpleName)
+    val builderClassName = ClassName(packageName, dataClassName.toImplClassName())
+    val fileName = dataClassName.toImplFileName()
     val copyBuilderClassName = CopyBuilder::class.asClassName()
 
     return FileSpec.builder(packageName, fileName)
         .addImport(copyBuilderClassName, "")
-        .addImport(packageName, simpleName)
+//        .addImport(dataClassName, "")
         .addType(
             TypeSpec.classBuilder(builderClassName)
                 .primaryConstructor(FunSpec.constructorBuilder().addParameter("source", dataClassName).build())

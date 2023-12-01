@@ -1,7 +1,7 @@
 package io.github.windedge.copybuilder.ir
 
 import io.github.windedge.copybuilder.CopyBuilderFqn
-import io.github.windedge.copybuilder.getImplClassName
+import io.github.windedge.copybuilder.toImplClassName
 import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
@@ -49,7 +49,7 @@ class CopyBuilderTransformer(
                     ?: error("Function not found: toCopyBuilder")
             this.overriddenSymbols += superFunc
 
-            val builderImplClassName = getImplClassName(klass.name.asString())
+            val builderImplClassName = klass.toImplClassName()
             val builderImplClass =
                 context.referenceClass(
                     klass.packageFqName?.child(Name.identifier(builderImplClassName))

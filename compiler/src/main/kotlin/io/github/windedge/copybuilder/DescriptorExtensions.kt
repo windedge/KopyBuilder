@@ -4,7 +4,7 @@ import com.squareup.kotlinpoet.ClassName
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.name.ClassId
-import org.jetbrains.kotlin.resolve.descriptorUtil.classId
+import org.jetbrains.kotlin.resolve.descriptorUtil.*
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.getDescriptorsFiltered
 import org.jetbrains.kotlin.types.KotlinType
@@ -33,11 +33,13 @@ val ClassDescriptor.functions
 
 
 fun ClassDescriptor.toClassName(): ClassName {
-    return ClassName(this.findPackage().fqName.asString(), this.name.asString())
+    val names = this.parentsWithSelf.filterIsInstance<ClassDescriptor>()
+        .map { it.name.asString() }.toList().reversed()
+    return ClassName(this.findPackage().fqName.asString(), names)
 }
 
 fun ClassId.toClassName(): ClassName {
-    return ClassName(this.packageFqName.asString(), this.shortClassName.asString())
+    return ClassName(this.packageFqName.asString(), this.relativeClassName.asString())
 }
 
 fun KotlinType.toClassName(): ClassName? {
@@ -61,7 +63,7 @@ fun ClassDescriptor.toGeneratedCopyBuilderPath(
     Files.createDirectories(outputDirectory)
 
     val name = if (buildClassName == null) {
-        getImplFileName(this.name.asString())
+        this.toImplFileName()
     } else {
         this.buildClassName()
     }
