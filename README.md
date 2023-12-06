@@ -25,7 +25,7 @@ For example, consider the following data class:
 data class User(
     val name: String,
     val email: String?
-) 
+)
 
 ```
 
@@ -36,11 +36,11 @@ public class UserBuilder: io.github.windedge.copybuilder.CopyBuilder<User> {
     override fun `get`(key: String): Any? {
         //...
     }
-    
+
     override fun put(key: String, `value`: Any?) {
         //...
     }
-    
+
     override fun build(): User = User(name = ..., email = ... )
 }
 
@@ -52,7 +52,7 @@ You can use it as follows:
 
 ```kotlin
 val user = User(...)
-val builder = user.toCopyBuilder()        
+val builder = user.toCopyBuilder()
 builder.apply {
     put("name", ...)
     put("email", ...)

@@ -2,6 +2,8 @@ package io.github.windedge.copybuilder
 
 public interface CopyBuilder<T> {
 
+    public fun contains(key: String): Boolean
+
     public fun get(key: String): Any?
 
     public fun put(key: String, value: Any?)

@@ -5,18 +5,9 @@ import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import io.github.windedge.copybuilder.*
 import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.PropertyDescriptor
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.types.isNullable
 import kotlin.reflect.KClass
-
-
-val ClassDescriptor.publicProperties: List<PropertyDescriptor>
-    get() = this.properties.filter { it.visibility == DescriptorVisibilities.PUBLIC }.toList()
-
-val ClassDescriptor.privateProperties: List<PropertyDescriptor>
-    get() = this.properties.filter { it.visibility != DescriptorVisibilities.PUBLIC }.toList()
 
 
 fun ClassDescriptor.generateImplClass(): FileSpec {
@@ -39,9 +30,10 @@ fun ClassDescriptor.generateImplClass(): FileSpec {
                 .addProperty(propertiesMap())
                 .addProperty(privatePropertiesSet())
                 .addSuperinterface(copyBuilderClassName.parameterizedBy(dataClassName))
+                .addFunction(containsFunction())
                 .addFunction(getterFunction())
                 .addFunction(setterFunction())
-                .addFunction(builderFunction())
+                .addFunction(buildFunction())
                 .build()
 
         )
@@ -77,7 +69,6 @@ fun ClassDescriptor.copyBuildExtension(): FunSpec {
 private fun ClassDescriptor.toParameterizedCopyBuilderName() =
     CopyBuilder::class.asClassName().parameterizedBy(this.toClassName())
 
-
 private fun valueMap() =
     PropertySpec.builder("values", MUTABLE_MAP.parameterizedBy(STRING, ANY.copy(nullable = true)))
         .addModifiers(KModifier.PRIVATE)
@@ -104,8 +95,17 @@ fun ClassDescriptor.privatePropertiesSet(): PropertySpec {
         .addModifiers(KModifier.PRIVATE).initializer("setOf(%L)", names).build()
 }
 
+fun containsFunction(): FunSpec {
+    return FunSpec.builder("contains")
+        .addModifiers(KModifier.OVERRIDE)
+        .addParameter("key", STRING)
+        .returns(BOOLEAN)
+        .apply {
+            addStatement("return properties.containsKey(%L)", "key")
+        }.build()
+}
 
-private fun ClassDescriptor.builderFunction(): FunSpec {
+private fun ClassDescriptor.buildFunction(): FunSpec {
     val constructor = checkNotNull(this.constructors.first()) {
         "Primary constructor for ${this.name} is missing"
     }
@@ -130,7 +130,7 @@ private fun ClassDescriptor.builderFunction(): FunSpec {
                 val argumentTypes = param.type.arguments.mapNotNull { it.type.toClassName() }
                 typeName = paramClassName.parameterizedBy(argumentTypes)
             }
-            if(param.type.isNullable()) {
+            if (param.type.isNullable()) {
                 typeName = typeName.copy(nullable = true)
             }
 
@@ -170,6 +170,7 @@ private fun ClassDescriptor.setterFunction(): FunSpec {
         .addStatement("values[%L] = %L", "key", "value")
         .build()
 }
+
 
 private fun ClassDescriptor.getterFunction(): FunSpec {
     val properties = this.publicProperties

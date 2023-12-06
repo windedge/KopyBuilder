@@ -22,6 +22,13 @@ val ClassDescriptor.properties
             it.kind == CallableMemberDescriptor.Kind.DECLARATION
         }
 
+val ClassDescriptor.publicProperties: List<PropertyDescriptor>
+    get() = this.properties.filter { it.visibility == DescriptorVisibilities.PUBLIC }.toList()
+
+val ClassDescriptor.privateProperties: List<PropertyDescriptor>
+    get() = this.properties.filter { it.visibility != DescriptorVisibilities.PUBLIC }.toList()
+
+
 val ClassDescriptor.functions
     get() = unsubstitutedMemberScope
         .getDescriptorsFiltered(kindFilter = DescriptorKindFilter.FUNCTIONS)
