@@ -12,9 +12,7 @@ public interface CopyBuilder<T> {
 }
 
 public interface CopyBuilderHost<T> {
-    public fun toCopyBuilder(): CopyBuilder<T> {
-        TODO("Implemented in KopyBuilder Plugin")
-    }
+    public fun toCopyBuilder(): CopyBuilder<T> = TODO("Implemented in KopyBuilder Plugin")
 
     public fun copyBuild(initialize: CopyBuilder<T>.() -> Unit): T {
         val builder = toCopyBuilder()
