@@ -80,11 +80,15 @@ class CopyBuilderAnalysisHandlerExtension(
         messageCollector.report(INFO, "generatedFiles = ${generatedFiles}")
 
         val classes = bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values
+        messageCollector.report(INFO, "Known classes = ${classes}")
         val (outdatedAnnotatedClasses, uptodateAnnotatedClasses) =
             classes.filter { it.isAnnotatedClass() }.partition { it.isOutdatedClass() }
-
         messageCollector.report(INFO, "outdatedAnnotatedClasses = ${outdatedAnnotatedClasses}")
         messageCollector.report(INFO, "uptodateAnnotatedClasses = ${uptodateAnnotatedClasses}")
+
+        if (outdatedAnnotatedClasses.isEmpty() && uptodateAnnotatedClasses.isEmpty()) {
+            return null
+        }
 
         // delete outdated generated files
         val uptodateGeneratedFiles = uptodateAnnotatedClasses.map {
