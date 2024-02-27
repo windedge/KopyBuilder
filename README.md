@@ -22,6 +22,7 @@ plugins {
 For example, consider the following data class:
 
 ```kotlin
+@KopyBuilder
 data class User(
     val name: String,
     val email: String?
