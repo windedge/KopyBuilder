@@ -56,6 +56,7 @@ class CopyBuilderAnalysisHandlerExtension(
         project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
     ): AnalysisResult? {
         val psiManager = PsiManager.getInstance(project)
+/*
         if (didRecompile) {
             psiManager.dropPsiCaches()
             return null
@@ -67,8 +68,9 @@ class CopyBuilderAnalysisHandlerExtension(
             )
             didRecompile = true
         }
-//        if (didRecompile) return null
-//        didRecompile = true
+*/
+        if (didRecompile) return null
+        didRecompile = true
 
         if (!outputDir.exists()) {
             Files.createDirectories(outputDir)
