@@ -117,7 +117,7 @@ private fun ClassDescriptor.buildFunction(): FunSpec {
     val parameterNames = parameters.map { it.name.asString() }
 
     require(propertyNames.containsAll(parameterNames)) {
-        "There are unknown parameter(s) in constructor parameters, class: $className."
+        "There are unknown parameter(s) in constructor parameters, class: $className, parameterNames: ${parameterNames.toList()}."
     }
 
     val blocks = parameters.map { param ->
@@ -198,4 +198,3 @@ private fun ClassDescriptor.getterFunction(): FunSpec {
         }
         .build()
 }
-
