@@ -106,21 +106,14 @@ fun containsFunction(): FunSpec {
 }
 
 private fun ClassDescriptor.buildFunction(): FunSpec {
-    val constructor = checkNotNull(this.constructors.first()) {
-        "Primary constructor for ${this.name} is missing"
-    }
-    val className = this.name.asString()
-
     val properties = this.properties
-    val parameters = constructor.valueParameters
     val propertyNames = properties.map { it.name.asString() }
-    val parameterNames = parameters.map { it.name.asString() }
+    val constructor = this.constructors.find { ctor ->
+        val parameterNames = ctor.valueParameters.map { it.name.asString() }
+        propertyNames.containsAll(parameterNames)
+    } ?: error("Can't find proper constructor.")
 
-    require(propertyNames.containsAll(parameterNames)) {
-        "There are unknown parameter(s) in constructor parameters, class: $className, parameterNames: ${parameterNames.toList()}."
-    }
-
-    val blocks = parameters.map { param ->
+    val blocks = constructor.valueParameters.map { param ->
         buildCodeBlock {
             val paramClassName = param.type.toClassName()
                 ?: error("can't figure out parameter's type, parameter: ${param.name}")
