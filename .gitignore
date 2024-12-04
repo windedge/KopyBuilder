@@ -1,7 +1,8 @@
 build/
-.fleet
+.fleet/
 .idea/
+.kotlin/
 *.iml
-.gradle
+.gradle/
 local.properties
 **/*.kotlin_builtins
