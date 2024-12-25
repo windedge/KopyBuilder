@@ -3,9 +3,8 @@ package io.github.windedge.copybuilder.ir
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import io.github.windedge.copybuilder.*
-import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
+import org.jetbrains.kotlin.descriptors.findPackage
 import org.jetbrains.kotlin.types.isNullable
 import kotlin.reflect.KClass
 
@@ -19,7 +18,6 @@ fun ClassDescriptor.generateImplClass(): FileSpec {
 
     return FileSpec.builder(packageName, fileName)
         .addImport(copyBuilderClassName, "")
-//        .addImport(dataClassName, "")
         .addType(
             TypeSpec.classBuilder(builderClassName)
                 .primaryConstructor(FunSpec.constructorBuilder().addParameter("source", dataClassName).build())
@@ -78,7 +76,7 @@ private fun valueMap() =
 fun ClassDescriptor.propertiesMap(): PropertySpec {
     val properties = this.properties
     val names = properties.map {
-        val type = it.type.toClassName() ?: it.fqNameSafe
+        val type = it.type.toClassName() ?: it.type.toString()
         CodeBlock.of("%S to %T::class", it.name.asString(), type)
     }.joinToCode(", ")
     return PropertySpec.builder(

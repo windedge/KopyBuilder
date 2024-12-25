@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.getClass
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.*
@@ -27,7 +28,7 @@ class CopyBuilderTransformer(
     private val irBuiltIns = context.irBuiltIns
     private val annotationFqName: FqName = FqName(annotationName)
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class, FirIncompatiblePluginAPI::class)
+    @OptIn(ObsoleteDescriptorBasedAPI::class, FirIncompatiblePluginAPI::class, UnsafeDuringIrConstructionAPI::class)
     override fun visitClass(declaration: IrClass, data: Nothing?): IrStatement {
         val klass = super.visitClass(declaration, data) as IrClass
         val hasAnnotation = declaration.annotations.hasAnnotation(annotationFqName)

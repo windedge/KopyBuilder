@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.utils.classId
+import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.predicate.LookupPredicate
@@ -31,6 +32,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
         predicateBasedProvider.getSymbolsByPredicate(PREDICATE).filterIsInstance<FirRegularClassSymbol>()
     }
 
+    @ExperimentalTopLevelDeclarationsGenerationApi
     override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirRegularClassSymbol {
         val klass = createTopLevelClass(classId, Key, ClassKind.CLASS)
         println("generateTopLevelClassLikeDeclaration, kclass = ${klass.classId.shortClassName}")
@@ -39,6 +41,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
     }
 
 
+    @ExperimentalTopLevelDeclarationsGenerationApi
     override fun getTopLevelClassIds(): Set<ClassId> {
         return matchedClasses.map {
             ClassId(it.classId.packageFqName, Name.identifier("${it.classId.shortClassName.asString()}CopyBuilderImpl"))

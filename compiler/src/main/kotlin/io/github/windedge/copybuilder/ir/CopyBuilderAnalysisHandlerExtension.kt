@@ -5,6 +5,7 @@ import io.github.windedge.copybuilder.toGeneratedCopyBuilderPath
 import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
+import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.INFO
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.WARNING
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
@@ -13,6 +14,7 @@ import org.jetbrains.kotlin.com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.com.intellij.psi.PsiManager
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
 import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
+import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -34,7 +36,7 @@ class CopyBuilderAnalysisHandlerExtension(
 
     private var didRecompile = false
 
-    private val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
+    private val messageCollector = configuration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
     private val outputDir = configuration.get(KEY_OUTPUT_DIR) ?: error("Output dir must not be empty.")
 
 
@@ -55,6 +57,7 @@ class CopyBuilderAnalysisHandlerExtension(
     override fun analysisCompleted(
         project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
     ): AnalysisResult? {
+        messageCollector.report(WARNING, "analysisCompleted")
         val psiManager = PsiManager.getInstance(project)
 /*
         if (didRecompile) {
@@ -69,6 +72,7 @@ class CopyBuilderAnalysisHandlerExtension(
             didRecompile = true
         }
 */
+        messageCollector.report(WARNING, "didRecompile = ${didRecompile}")
         if (didRecompile) return null
         didRecompile = true
 

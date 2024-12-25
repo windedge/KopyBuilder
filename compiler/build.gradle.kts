@@ -11,10 +11,9 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
-
 val embeddedDependencies by configurations.creating { isTransitive = false }
 dependencies {
-    fun embedded(dep: kotlin.Any) {
+    fun embedded(dep: Any) {
         implementation(dep)
         embeddedDependencies(dep)
     }
@@ -22,8 +21,7 @@ dependencies {
     embedded(project(":runtime"))
     embedded(libs.poet)
 
-    compileOnly(libs.kotlin.embeddable.compiler)
-//    compileOnly(libs.kotlin.compiler)
+    implementation(libs.kotlin.embeddable.compiler)
 
     testImplementation(libs.test.kotest.framework)
     testImplementation(libs.test.strikt)
@@ -41,5 +39,5 @@ val shadowJar = tasks.shadowJar.apply {
 tasks.named<Jar>("jar") {
     dependsOn(shadowJar)
     from(zipTree(shadowJar.get().archiveFile))
-    this.duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

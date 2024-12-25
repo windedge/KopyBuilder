@@ -26,7 +26,9 @@ fun main() {
 }
 
 fun debug() = "Hello, World!"
-"""))
+"""
+                )
+            )
             Assertions.assertEquals(ExitCode.OK, result.exitCode)
         }
 
@@ -48,7 +50,9 @@ fun main() {
     println("fruit2 = " + fruit2)
 }
 
-"""))
+"""
+                )
+            )
 
             Assertions.assertEquals(ExitCode.OK, result.exitCode)
         }
@@ -63,7 +67,6 @@ fun main() {
     ): CompilationResult {
         return KotlinCompilation().apply {
             sources = sourceFiles + material
-//            useIR = false
             compilerPluginRegistrars = listOf(plugin)
             pluginOptions = listOf(
                 PluginOption(
