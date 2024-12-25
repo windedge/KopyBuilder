@@ -19,13 +19,12 @@ kotlin {
         nodejs()
     }
 
-    @OptIn(ExperimentalWasmDsl::class)
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     wasmJs {
         browser()
     }
 
-//    androidTarget {
-    android {
+    androidTarget {
         publishLibraryVariants("release", "debug")
     }
 

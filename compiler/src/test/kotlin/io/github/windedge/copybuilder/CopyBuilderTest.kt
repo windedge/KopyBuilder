@@ -4,6 +4,9 @@ import com.tschuchort.compiletesting.*
 import com.tschuchort.compiletesting.KotlinCompilation.*
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
 import io.kotest.core.spec.style.StringSpec
+// 添加必要的导入语句
+import io.github.windedge.copybuilder.KopyBuilder
+import io.github.windedge.copybuilder.CopyBuilderHost
 import io.kotest.engine.spec.tempdir
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
@@ -39,14 +42,22 @@ fun debug() = "Hello, World!"
 import io.github.windedge.copybuilder.KopyBuilder
 import io.github.windedge.copybuilder.CopyBuilderHost
 
+// 修改注解
 @KopyBuilder
-data class Fruit(val name: String)
+data class Fruit(val name: String) {
+    // 添加必要的实现
+    override fun toString(): String {
+        return "Fruit(name='" + name + "')"
+    }
+}
 
 fun main() {
     val fruit = Fruit("apple")
+// 修改测试代码
     val fruit2 = (fruit as CopyBuilderHost<Fruit>).copyBuild {
         put("name", "Pear")
-    }
+    } // 添加必要的断言
+    Assertions.assertEquals(Fruit("Pear"), fruit2)
     println("fruit2 = " + fruit2)
 }
 
@@ -108,5 +119,5 @@ private val material = kotlin(
 //@Retention(AnnotationRetention.SOURCE)
 //@Target(AnnotationTarget.CLASS)
 //annotation class KopyBuilder
-    """,
+    """
 )
