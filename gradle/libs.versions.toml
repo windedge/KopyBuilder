@@ -2,11 +2,11 @@
 maven-publish = "0.29.0"
 autoservice-annotation = "1.1.1"
 autoservice-processor = "1.1.0"
-kotlin = "2.1.0"
-poet = "1.18.0"
+kotlin = "1.9.24"
+poet = "1.17.0"
 buildconfig = "4.1.2"
 test-strikt = "0.34.0"
-test-kctfork = "0.7.0"
+test-kctfork = "0.4.1"
 android-library = "8.0.2"
 
 

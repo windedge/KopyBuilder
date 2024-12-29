@@ -1,12 +1,11 @@
 package io.github.windedge.copybuilder
 
 import com.squareup.kotlinpoet.ClassName
+import org.jetbrains.kotlin.backend.common.lower.parentsWithSelf
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.util.parentsWithSelf
 import org.jetbrains.kotlin.name.FqName
 
-internal const val copy = "copy"
 internal val CopyBuilderFqn = FqName("io.github.windedge.copybuilder")
 
 internal fun ClassName.toImplClassSimpleName(): String {

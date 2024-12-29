@@ -3,8 +3,8 @@ package io.github.windedge.copybuilder.ir
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import io.github.windedge.copybuilder.*
+import org.jetbrains.kotlin.backend.common.serialization.findPackage
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
-import org.jetbrains.kotlin.descriptors.findPackage
 import org.jetbrains.kotlin.types.isNullable
 import kotlin.reflect.KClass
 

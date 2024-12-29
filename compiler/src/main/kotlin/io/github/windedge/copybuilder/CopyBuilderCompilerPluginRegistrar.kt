@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.resolve.jvm.extensions.AnalysisHandlerExtension
 
 @OptIn(ExperimentalCompilerApi::class)
 class CopyBuilderCompilerPluginRegistrar : CompilerPluginRegistrar() {
-    override val supportsK2: Boolean get() = true
+    override val supportsK2: Boolean get() = false
 
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         if (configuration[KEY_ENABLED] == false) return

@@ -36,23 +36,9 @@ class CopyBuilderAnalysisHandlerExtension(
 
     private var didRecompile = false
 
-    private val messageCollector = configuration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
+    private val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
     private val outputDir = configuration.get(KEY_OUTPUT_DIR) ?: error("Output dir must not be empty.")
 
-
-    /*
-        override fun doAnalysis(
-            project: Project,
-            module: ModuleDescriptor,
-            projectContext: ProjectContext,
-            files: Collection<KtFile>,
-            bindingTrace: BindingTrace,
-            componentProvider: ComponentProvider
-        ): AnalysisResult? {
-            messageCollector.report(CompilerMessageSeverity.WARNING, "doAnalysis end.")
-            return null
-        }
-    */
 
     override fun analysisCompleted(
         project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
@@ -103,15 +89,6 @@ class CopyBuilderAnalysisHandlerExtension(
         generatedFiles.filter { it !in uptodateGeneratedFiles }.ifNotEmpty {
             messageCollector.report(WARNING, "outdatedFiles = ${this}")
             this.forEach { it.deleteIfExists() }
-            /*
-                        return AnalysisResult.RetryWithAdditionalRoots(
-                            bindingContext = BindingContext.EMPTY,
-                            moduleDescriptor = module,
-                            additionalKotlinRoots = listOf(outputDir.toFile()),
-                            additionalJavaRoots = emptyList(),
-                            addToEnvironment = true
-                        )
-            */
         }
 
         if (outdatedAnnotatedClasses.isEmpty()) {

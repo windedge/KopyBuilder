@@ -1,103 +1,150 @@
 package io.github.windedge.copybuilder
 
-import com.tschuchort.compiletesting.*
-import com.tschuchort.compiletesting.KotlinCompilation.*
+import com.tschuchort.compiletesting.CompilationResult
+import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
+import com.tschuchort.compiletesting.PluginOption
+import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
-import io.kotest.core.spec.style.StringSpec
-// 添加必要的导入语句
-import io.github.windedge.copybuilder.KopyBuilder
-import io.github.windedge.copybuilder.CopyBuilderHost
-import io.kotest.engine.spec.tempdir
 import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
+import kotlin.test.assertEquals
 
-const val pluginId: PluginId = Artifacts.compilerPluginId
+const val pluginId = "io.github.windedge.copybuilder.compiler"
 
 @OptIn(ExperimentalCompilerApi::class)
-class CopyBuilderTest : StringSpec() {
-    private val temporaryFolder = tempdir()
+class CopyBuilderTest {
+    @TempDir
+    lateinit var temporaryFolder: File
 
-    init {
-        "compile test" {
-            val result = compile(
-                sourceFile = kotlin(
-                    "main.kt", """
-fun main() {
-  println(debug())
-}
+    /**
+     * Basic compilation test
+     * Verifies that a simple function can be compiled without any errors
+     */
+    @Test
+    fun simpleFunctionShouldCompileSuccessfully() {
+        val result = compile(
+            sourceFile = kotlin(
+                "main.kt", """
+                fun main() {
+                    println(debug())
+                }
 
-fun debug() = "Hello, World!"
-"""
-                )
+                fun debug() = "Hello, World!"
+                """
             )
-            Assertions.assertEquals(ExitCode.OK, result.exitCode)
-        }
-
-        "should be generated" {
-            val result = compile(
-                sourceFile = kotlin(
-                    "main.kt", """
-import io.github.windedge.copybuilder.KopyBuilder
-import io.github.windedge.copybuilder.CopyBuilderHost
-
-// 修改注解
-@KopyBuilder
-data class Fruit(val name: String) {
-    // 添加必要的实现
-    override fun toString(): String {
-        return "Fruit(name='" + name + "')"
+        )
+        assertEquals(ExitCode.OK, result.exitCode)
     }
-}
 
-fun main() {
-    val fruit = Fruit("apple")
-// 修改测试代码
-    val fruit2 = (fruit as CopyBuilderHost<Fruit>).copyBuild {
-        put("name", "Pear")
-    } // 添加必要的断言
-    Assertions.assertEquals(Fruit("Pear"), fruit2)
-    println("fruit2 = " + fruit2)
-}
+    /**
+     * Basic Builder Generation test
+     * Tests the generation of a Builder for a simple data class
+     */
+    @Test
+    fun shouldGenerateBuilderForSimpleDataClass() {
+        val result = compile(
+            sourceFile = kotlin(
+                "main.kt", """
+                import io.github.windedge.copybuilder.KopyBuilder
+                import io.github.windedge.copybuilder.CopyBuilderHost
 
-"""
-                )
+                @KopyBuilder
+                data class Fruit(val name: String)
+
+                fun main() {
+                    val fruit = Fruit("apple")
+                    val fruit2 = (fruit as CopyBuilderHost<Fruit>).copyBuild {
+                        put("name", "Pear")
+                    }
+                    assert(fruit2 == Fruit("Pear"))
+                }
+                """
             )
+        )
+        assertEquals(ExitCode.OK, result.exitCode)
+    }
 
-            Assertions.assertEquals(ExitCode.OK, result.exitCode)
-        }
+    /**
+     * Complex Data Class Builder test
+     * Tests Builder generation for a data class with multiple properties
+     */
+    @Test
+    fun shouldHandleComplexDataClassWithMultipleProperties() {
+        val result = compile(
+            sourceFile = kotlin(
+                "main.kt", """
+                import io.github.windedge.copybuilder.KopyBuilder
+                import io.github.windedge.copybuilder.CopyBuilderHost
+
+                @KopyBuilder
+                data class Person(
+                    val name: String,
+                    val age: Int,
+                    val email: String?
+                )
+
+                fun main() {
+                    val person = Person("John", 25, "john@example.com")
+                    val person2 = (person as CopyBuilderHost<Person>).copyBuild {
+                        put("name", "Jane")
+                        put("age", 30)
+                        put("email", null)
+                    }
+                    assert(person2 == Person("Jane", 30, null))
+                }
+                """
+            )
+        )
+        assertEquals(ExitCode.OK, result.exitCode)
+    }
+
+    /**
+     * Error Handling test
+     * Tests compiler behavior when @KopyBuilder is misused
+     */
+    @Test
+    fun shouldFailWhenAnnotatingNonDataClass() {
+        val result = compile(
+            sourceFile = kotlin(
+                "main.kt", """
+                import io.github.windedge.copybuilder.KopyBuilder
+
+                @KopyBuilder
+                class NonDataClass(val name: String)
+
+                fun main() {
+                    val obj = NonDataClass("test")
+                }
+                """
+            )
+        )
+        assertEquals(ExitCode.INTERNAL_ERROR, result.exitCode)
     }
 
     @OptIn(ExperimentalCompilerApi::class)
     fun compile(
         sourceFiles: List<SourceFile>,
-        plugin: CompilerPluginRegistrar,
-        commandLineProcessor: CommandLineProcessor,
+        plugin: CompilerPluginRegistrar = CopyBuilderCompilerPluginRegistrar(),
+        commandLineProcessor: CommandLineProcessor = CopyBuilderCommandLineProcessor(),
         enabled: Boolean = true,
     ): CompilationResult {
         return KotlinCompilation().apply {
-            sources = sourceFiles + material
+            sources = sourceFiles
             compilerPluginRegistrars = listOf(plugin)
             pluginOptions = listOf(
-                PluginOption(
-                    pluginId,
-                    optionName = OPTION_ENABLED.optionName,
-                    optionValue = enabled.toString()
-                ),
-                PluginOption(
-                    pluginId,
-                    optionName = OPTION_VERBOSE.optionName,
-                    optionValue = "true"
-                ),
-                PluginOption(
-                    pluginId,
-                    optionName = OPTION_OUTPUT_DIR.optionName,
-                    optionValue = temporaryFolder.absolutePath
-                )
+                PluginOption(pluginId, optionName = "enabled", optionValue = enabled.toString()),
+                PluginOption(pluginId, optionName = "verbose", optionValue = "true"),
+                PluginOption(pluginId, optionName = "outputDir", optionValue = temporaryFolder.absolutePath)
             )
             commandLineProcessors = listOf(commandLineProcessor)
             inheritClassPath = true
+            messageOutputStream = System.out
+            verbose = true
         }.compile()
     }
 
@@ -111,13 +158,3 @@ fun main() {
     }
 }
 
-private val material = kotlin(
-    "KopyBuilder.kt",
-    """
-//package io.github.windedge.copybuilder
-//
-//@Retention(AnnotationRetention.SOURCE)
-//@Target(AnnotationTarget.CLASS)
-//annotation class KopyBuilder
-    """
-)
