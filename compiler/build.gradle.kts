@@ -23,8 +23,7 @@ dependencies {
 
     implementation(libs.kotlin.embeddable.compiler)
 
-    testImplementation(libs.test.kotest.framework)
-    testImplementation(libs.test.strikt)
+    testImplementation(kotlin("test"))
     testImplementation(libs.test.kctfork.core)
 }
 
