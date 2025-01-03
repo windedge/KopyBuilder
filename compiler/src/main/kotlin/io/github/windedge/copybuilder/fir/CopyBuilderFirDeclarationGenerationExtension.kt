@@ -1,56 +1,175 @@
 package io.github.windedge.copybuilder.fir
 
 import org.jetbrains.kotlin.GeneratedDeclarationKey
-import org.jetbrains.kotlin.descriptors.ClassKind
+import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirSession
-import org.jetbrains.kotlin.fir.declarations.utils.classId
-//import org.jetbrains.kotlin.fir.extensions.ExperimentalTopLevelDeclarationsGenerationApi
-import org.jetbrains.kotlin.fir.extensions.FirDeclarationGenerationExtension
-import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataKey
+import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataRegistry
+import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.utils.isData
+import org.jetbrains.kotlin.fir.extensions.*
 import org.jetbrains.kotlin.fir.extensions.predicate.LookupPredicate
-import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
+import org.jetbrains.kotlin.fir.plugin.createConstructor
+import org.jetbrains.kotlin.fir.plugin.createMemberFunction
+import org.jetbrains.kotlin.fir.plugin.createMemberProperty
 import org.jetbrains.kotlin.fir.plugin.createTopLevelClass
-import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
-import org.jetbrains.kotlin.name.ClassId
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.fir.resolve.defaultType
+import org.jetbrains.kotlin.fir.resolve.providers.getRegularClassSymbolByClassId
+import org.jetbrains.kotlin.fir.symbols.impl.*
+import org.jetbrains.kotlin.name.*
 
-
-//fun String.fqn(): FqName = FqName("org.jetbrains.kotlin.fir.plugin.$this")
-
+@OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
 class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDeclarationGenerationExtension(session) {
     companion object {
-        private val BUILDER_CLASS_NAME = Name.identifier("Builder")
+        private val KOPY_BUILDER_PACKAGE = FqName("io.github.windedge.copybuilder")
         private val PREDICATE =
-            LookupPredicate.create { annotated(FqName("io.github.windedge.copybuilder.KopyBuilder")) }
+            LookupPredicate.create { annotated(KOPY_BUILDER_PACKAGE.child(Name.identifier("KopyBuilder"))) }
     }
 
-    object Key : GeneratedDeclarationKey()
+    object Key : GeneratedDeclarationKey() {
+        override fun toString(): String {
+            return "CopyBuilderGeneratorKey"
+        }
+    }
 
     private val predicateBasedProvider = session.predicateBasedProvider
     private val matchedClasses by lazy {
         predicateBasedProvider.getSymbolsByPredicate(PREDICATE).filterIsInstance<FirRegularClassSymbol>()
     }
+    private val classIdsForMatchedClasses: Map<ClassId, FirRegularClassSymbol> by lazy {
+        matchedClasses.associateBy {
+            val implClassName = "${it.classId.shortClassName}CopyBuilderImpl"
+            ClassId(it.classId.packageFqName, Name.identifier(implClassName))
+        }
+    }
 
-//    @ExperimentalTopLevelDeclarationsGenerationApi
-    override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirRegularClassSymbol {
-        val klass = createTopLevelClass(classId, Key, ClassKind.CLASS)
-        println("generateTopLevelClassLikeDeclaration, kclass = ${klass.classId.shortClassName}")
+    override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
+        val matchedClass = classIdsForMatchedClasses[classId] ?: return null
+        if (!matchedClass.isData) {
+            error("@KopyBuilder can only be applied to data classes")
+        }
 
-        return klass.symbol
+        return createTopLevelClass(classId, Key).also {
+            it.matchedClass = matchedClass.classId
+        }.symbol
+    }
+
+    override fun getCallableNamesForClass(
+        classSymbol: FirClassSymbol<*>,
+        context: MemberGenerationContext
+    ): Set<Name> {
+        val owner = classSymbol as? FirRegularClassSymbol ?: return emptySet()
+        owner.matchedClass ?: return emptySet()
+
+        return setOf(
+            SpecialNames.INIT,
+            Name.identifier("contains"),
+            Name.identifier("get"),
+            Name.identifier("put"),
+            Name.identifier("build"),
+            Name.identifier("values"),
+            Name.identifier("properties"),
+            Name.identifier("privateProperties"),
+        )
+    }
+
+    override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
+        val classId = context.owner.classId
+        val matchedClass = classIdsForMatchedClasses[classId] ?: return emptyList()
+        return listOf(createConstructor(context.owner, Key) {
+            valueParameter(Name.identifier("source"), matchedClass.defaultType())
+        }.symbol)
+    }
+
+    override fun generateProperties(
+        callableId: CallableId,
+        context: MemberGenerationContext?
+    ): List<FirPropertySymbol> {
+        val owner = context?.owner as? FirRegularClassSymbol ?: return emptyList()
+        val matchedClassId = owner.matchedClass ?: return emptyList()
+        val matchedClassSymbol = session.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
+
+        return listOf(
+            createMemberProperty(owner, Key, Name.identifier("source"), matchedClassSymbol.defaultType()) {
+                visibility = Visibilities.Private
+            }.symbol,
+            createMemberProperty(
+                owner,
+                Key,
+                Name.identifier("values"),
+                BuiltinTypes.mutableMapType(session),
+            ) {
+                visibility = Visibilities.Private
+            }.symbol,
+            createMemberProperty(
+                owner,
+                Key,
+                Name.identifier("properties"),
+                BuiltinTypes.mapType(session),
+            ) {
+                visibility = Visibilities.Private
+            }.symbol,
+            createMemberProperty(
+                owner,
+                Key,
+                Name.identifier("privateProperties"),
+                BuiltinTypes.setType(session),
+            ) {
+                visibility = Visibilities.Private
+            }.symbol
+        )
     }
 
 
-//    @ExperimentalTopLevelDeclarationsGenerationApi
+    override fun generateFunctions(
+        callableId: CallableId,
+        context: MemberGenerationContext?
+    ): List<FirNamedFunctionSymbol> {
+        val owner = context?.owner as? FirRegularClassSymbol ?: return emptyList()
+        val matchedClassId = owner.matchedClass ?: return emptyList()
+        val matchedClassSymbol = session.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
+
+        return when (callableId.callableName.asString()) {
+            "contains" -> listOf(
+                createMemberFunction(
+                    owner,
+                    Key,
+                    Name.identifier("contains"),
+                    BuiltinTypes.booleanType(session)
+                ) {
+                    valueParameter(Name.identifier("key"), BuiltinTypes.stringType(session))
+                }.symbol
+            )
+
+            "get" -> listOf(createMemberFunction(owner, Key, Name.identifier("get"), BuiltinTypes.anyNType(session)) {
+                valueParameter(Name.identifier("key"), BuiltinTypes.stringType(session))
+            }.symbol)
+
+            "put" -> listOf(createMemberFunction(owner, Key, Name.identifier("put"), BuiltinTypes.unitType(session)) {
+                valueParameter(Name.identifier("key"), BuiltinTypes.stringType(session))
+                valueParameter(Name.identifier("value"), BuiltinTypes.anyNType(session))
+            }.symbol)
+
+            "build" -> listOf(
+                createMemberFunction(owner, Key, Name.identifier("build"), matchedClassSymbol.defaultType()).symbol
+            )
+
+            else -> emptyList()
+        }
+    }
+
     override fun getTopLevelClassIds(): Set<ClassId> {
-        return matchedClasses.map {
-            ClassId(it.classId.packageFqName, Name.identifier("${it.classId.shortClassName.asString()}CopyBuilderImpl"))
-        }.toSet()
+        return classIdsForMatchedClasses.keys
     }
 
     override fun FirDeclarationPredicateRegistrar.registerPredicates() {
         register(PREDICATE)
     }
-
-
 }
+
+private object MatchedClassAttributeKey : FirDeclarationDataKey()
+
+private var FirRegularClass.matchedClass: ClassId? by FirDeclarationDataRegistry.data(MatchedClassAttributeKey)
+private val FirRegularClassSymbol.matchedClass: ClassId? by FirDeclarationDataRegistry.symbolAccessor(
+    MatchedClassAttributeKey
+)

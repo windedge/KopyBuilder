@@ -2,20 +2,20 @@ package io.github.windedge.copybuilder.ir
 
 import io.github.windedge.copybuilder.CopyBuilderFqn
 import io.github.windedge.copybuilder.toImplClassName
-import org.jetbrains.kotlin.backend.common.extensions.FirIncompatiblePluginAPI
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.createIrBuilder
 import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.IrStatement
-import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
-import org.jetbrains.kotlin.ir.builders.*
-import org.jetbrains.kotlin.ir.builders.declarations.addValueParameter
+import org.jetbrains.kotlin.ir.builders.irBlockBody
+import org.jetbrains.kotlin.ir.builders.irCall
+import org.jetbrains.kotlin.ir.builders.irGet
+import org.jetbrains.kotlin.ir.builders.irReturn
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
-import org.jetbrains.kotlin.ir.types.getClass
+import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.typeWith
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
@@ -27,42 +27,49 @@ class CopyBuilderTransformer(
     private val irBuiltIns = context.irBuiltIns
     private val annotationFqName: FqName = FqName(annotationName)
 
-    @OptIn(ObsoleteDescriptorBasedAPI::class, FirIncompatiblePluginAPI::class)
     override fun visitClass(declaration: IrClass, data: Nothing?): IrStatement {
         val klass = super.visitClass(declaration, data) as IrClass
         val hasAnnotation = declaration.annotations.hasAnnotation(annotationFqName)
         if (!hasAnnotation) return klass
 
-        val copyBuilderHostClass: IrClassSymbol =
-            context.referenceClass(CopyBuilderFqn.child(Name.identifier("CopyBuilderHost")))
-                ?: error("Class: CopyBuilderHost cannot be found!")
+        if (!declaration.isData) {
+            error("@KopyBuilder can only be applied to data classes")
+        }
+
+        // 使用ClassId来获取类引用
+        val copyBuilderHostClassId = ClassId(CopyBuilderFqn, Name.identifier("CopyBuilderHost"))
+        val copyBuilderHostClass = context.referenceClass(copyBuilderHostClassId)
+            ?: error("Class: CopyBuilderHost cannot be found!")
         val parameterizedFactoryType = copyBuilderHostClass.typeWith(klass.defaultType)
         klass.superTypes += parameterizedFactoryType
 
-        val copyBuilderClass = context.referenceClass(CopyBuilderFqn.child(Name.identifier("CopyBuilder")))
+        val copyBuilderClassId = ClassId(CopyBuilderFqn, Name.identifier("CopyBuilder"))
+        val copyBuilderClass = context.referenceClass(copyBuilderClassId)
             ?: error("Class: CopyBuilder cannot be found!")
         val parameterizedType = copyBuilderClass.typeWith(klass.defaultType)
 
         val toCopyBuilderFunc = klass.addFunc("toCopyBuilder", parameterizedType, Modality.OPEN).apply {
             val superFunc =
-                copyBuilderHostClass.functions.singleOrNull { it.descriptor.name.asString() == "toCopyBuilder" }
+                copyBuilderHostClass.functions.singleOrNull { it.owner.name.asString() == "toCopyBuilder" }
                     ?: error("Function not found: toCopyBuilder")
             this.overriddenSymbols += superFunc
 
             val builderImplClassName = klass.toImplClassName()
-            val builderImplClass =
-                context.referenceClass(
-                    klass.packageFqName?.child(Name.identifier(builderImplClassName))
-                        ?: FqName(builderImplClassName)
-                )
-                    ?: error("Class: $builderImplClassName cannot be found!")
+            val builderImplClassId = ClassId(
+                klass.packageFqName ?: CopyBuilderFqn,
+                Name.identifier(builderImplClassName)
+            )
+            val builderImplClass = context.referenceClass(builderImplClassId)
+                ?: error("Class not found: $builderImplClassName")
 
-            body = irBuiltIns.createIrBuilder(this.symbol).irBlockBody {
-                val defaultConstructor = builderImplClass.constructors.first()
-                val thisReceiver = irGet(this@apply.dispatchReceiverParameter!!)
+            val irBuilder = context.irBuiltIns.createIrBuilder(symbol)
+            body = irBuilder.irBlockBody {
                 +irReturn(
-                    irCall(defaultConstructor).apply {
-                        putValueArgument(0, thisReceiver)
+                    irCall(
+                        builderImplClass.constructors.firstOrNull()
+                            ?: error("No constructor found in $builderImplClassName"),
+                    ).apply {
+                        putValueArgument(0, irGet(klass.thisReceiver!!))
                     }
                 )
             }
@@ -70,41 +77,16 @@ class CopyBuilderTransformer(
 
         klass.addFunc("copyBuild", klass.defaultType, Modality.OPEN).apply {
             val superFunc =
-                copyBuilderHostClass.functions.singleOrNull { it.descriptor.name.asString() == "copyBuild" }
+                copyBuilderHostClass.functions.singleOrNull { it.owner.name.asString() == "copyBuild" }
                     ?: error("Function not found: copyBuild");
             overriddenSymbols += superFunc
 
-            val initializerFunc = irBuiltIns.functionN(1)
-            val initilizerType = initializerFunc.typeWith(parameterizedType, irBuiltIns.unitType)
-            val param1 = addValueParameter("initialize", initilizerType)
-
-            body = irBuiltIns.createIrBuilder(this.symbol).irBlockBody {
-                val thisReceiver = irGet(this@apply.dispatchReceiverParameter!!)
-                val localBuilder = irTemporary(irCall(toCopyBuilderFunc).apply {
-                    dispatchReceiver = thisReceiver
-                }, "builder")
-
-                val invokeFunc = initializerFunc.simpleFunctions().singleOrNull { it.name.asString() == "invoke" }
-                    ?: error("Can't get invoke function of ${initializerFunc.name}")
-                val buildFunc =
-                    parameterizedType.getClass()?.functions?.singleOrNull { it.name.asString() == "build" }
-                        ?: error("build function not found")
-
-                +irCall(invokeFunc).apply {
-                    dispatchReceiver = irGet(param1)
-                    putValueArgument(0, irGet(localBuilder))
-                }
-
-                +irReturn(
-                    irCall(buildFunc).apply {
-                        dispatchReceiver = irGet(localBuilder)
-                    }
-                )
-
+            val irBuilder = context.irBuiltIns.createIrBuilder(symbol)
+            body = irBuilder.irBlockBody {
+                +irReturn(irGet(klass.thisReceiver!!))
             }
         }
 
         return klass
     }
-
 }
