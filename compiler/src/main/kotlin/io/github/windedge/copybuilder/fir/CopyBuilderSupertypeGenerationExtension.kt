@@ -1,13 +1,16 @@
 package io.github.windedge.copybuilder.fir
 
 import org.jetbrains.kotlin.descriptors.ClassKind
+import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.predicate.DeclarationPredicate
 import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
+import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
 import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
 import org.jetbrains.kotlin.fir.types.classId
@@ -25,6 +28,7 @@ class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertyp
         }
     }
 
+    @OptIn(FirImplementationDetail::class)
     override fun computeAdditionalSupertypes(
         classLikeDeclaration: FirClassLikeDeclaration,
         resolvedSupertypes: List<FirResolvedTypeRef>,
@@ -33,11 +37,24 @@ class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertyp
         if (classLikeDeclaration !is FirRegularClass) return emptyList()
         when (classLikeDeclaration.classKind) {
             ClassKind.CLASS,
-            ClassKind.OBJECT -> {}
+            ClassKind.OBJECT -> {
+            }
+
             else -> return emptyList()
         }
         if (resolvedSupertypes.any { it.coneType.classId == copyBuilderHostClassId }) return emptyList()
-        return listOf(copyBuilderHostClassId.constructClassLikeType(emptyArray(), isMarkedNullable = false))
+
+        val coneClassLikeType = copyBuilderHostClassId.constructClassLikeType(
+            arrayOf(classLikeDeclaration.classId.defaultType(emptyList())),
+        )
+//        val resolvedTypeRef = FirResolvedTypeRefImpl(
+//            null, mutableListOf<FirAnnotation>().toMutableOrEmpty(), coneClassLikeType, null
+//        )
+//        val resolvedTypeRef = buildResolvedTypeRef { type = coneClassLikeType }
+
+//        if (resolvedSupertypes.any { it == resolvedTypeRef }) return emptyList()
+
+        return listOf(coneClassLikeType)
     }
 
     override fun needTransformSupertypes(declaration: FirClassLikeDeclaration): Boolean {

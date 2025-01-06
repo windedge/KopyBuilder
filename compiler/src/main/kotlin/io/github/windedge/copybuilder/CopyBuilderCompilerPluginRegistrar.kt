@@ -3,6 +3,7 @@
 package io.github.windedge.copybuilder
 
 import io.github.windedge.copybuilder.ir.CopyBuilderGenerationExtension
+import io.github.windedge.copybuilder.ir.CopyBuilderIrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
@@ -19,6 +20,7 @@ class CopyBuilderCompilerPluginRegistrar : CompilerPluginRegistrar() {
 
         // K2 编译器使用 FIR 扩展
         FirExtensionRegistrarAdapter.registerExtension(CopyBuilderFirExtensionRegistar())
-        IrGenerationExtension.registerExtension(CopyBuilderGenerationExtension())
+//        IrGenerationExtension.registerExtension(CopyBuilderGenerationExtension())
+        IrGenerationExtension.registerExtension(CopyBuilderIrGenerationExtension())
     }
 }

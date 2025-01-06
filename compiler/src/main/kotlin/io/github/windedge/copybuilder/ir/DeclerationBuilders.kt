@@ -1,5 +1,7 @@
 package io.github.windedge.copybuilder.ir
 
+import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
+import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
 import org.jetbrains.kotlin.descriptors.DescriptorVisibility
 import org.jetbrains.kotlin.descriptors.Modality
@@ -9,6 +11,8 @@ import org.jetbrains.kotlin.ir.builders.declarations.addFunction
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.IrSymbolOwner
+import org.jetbrains.kotlin.ir.symbols.IrSymbol
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.util.copyTo
 import org.jetbrains.kotlin.ir.util.parentAsClass
@@ -47,3 +51,11 @@ fun IrClass.addFunc(
 
 inline fun IrClass.addFunc(builder: IrFunctionBuilder.() -> Unit): IrSimpleFunction =
     factory.addFunction(this, builder)
+
+
+fun IrPluginContext.declarationIrBuilder(symbol: IrSymbol): DeclarationIrBuilder =
+    DeclarationIrBuilder(this, symbol)
+
+fun IrPluginContext.declarationIrBuilder(
+    element: IrSymbolOwner
+): DeclarationIrBuilder = DeclarationIrBuilder(this, element.symbol)

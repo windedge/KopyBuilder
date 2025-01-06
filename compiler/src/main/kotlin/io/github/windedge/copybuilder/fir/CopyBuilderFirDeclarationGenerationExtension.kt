@@ -3,16 +3,21 @@ package io.github.windedge.copybuilder.fir
 import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.descriptors.Visibilities
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.analysis.checkers.declaration.primaryConstructorSymbol
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataKey
 import org.jetbrains.kotlin.fir.declarations.FirDeclarationDataRegistry
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
 import org.jetbrains.kotlin.fir.declarations.utils.isData
+import org.jetbrains.kotlin.fir.expressions.builder.buildCallableReferenceAccess
+import org.jetbrains.kotlin.fir.expressions.builder.buildExpressionStub
 import org.jetbrains.kotlin.fir.extensions.*
 import org.jetbrains.kotlin.fir.extensions.predicate.LookupPredicate
 import org.jetbrains.kotlin.fir.plugin.createConstructor
 import org.jetbrains.kotlin.fir.plugin.createMemberFunction
 import org.jetbrains.kotlin.fir.plugin.createMemberProperty
 import org.jetbrains.kotlin.fir.plugin.createTopLevelClass
+import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
+import org.jetbrains.kotlin.fir.references.builder.buildSimpleNamedReference
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.getRegularClassSymbolByClassId
 import org.jetbrains.kotlin.fir.symbols.impl.*
@@ -67,6 +72,9 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
             Name.identifier("get"),
             Name.identifier("put"),
             Name.identifier("build"),
+
+            // properties
+            Name.identifier("source"),
             Name.identifier("values"),
             Name.identifier("properties"),
             Name.identifier("privateProperties"),
@@ -76,7 +84,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
     override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
         val classId = context.owner.classId
         val matchedClass = classIdsForMatchedClasses[classId] ?: return emptyList()
-        return listOf(createConstructor(context.owner, Key) {
+        return listOf(createConstructor(context.owner, Key, isPrimary = true) {
             valueParameter(Name.identifier("source"), matchedClass.defaultType())
         }.symbol)
     }
@@ -88,39 +96,68 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
         val owner = context?.owner as? FirRegularClassSymbol ?: return emptyList()
         val matchedClassId = owner.matchedClass ?: return emptyList()
         val matchedClassSymbol = session.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
+//        val matchedClassSymbol = session.symbolProvider.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
 
-        return listOf(
-            createMemberProperty(owner, Key, Name.identifier("source"), matchedClassSymbol.defaultType()) {
-                visibility = Visibilities.Private
-            }.symbol,
-            createMemberProperty(
-                owner,
-                Key,
-                Name.identifier("values"),
-                BuiltinTypes.mutableMapType(session),
-            ) {
-                visibility = Visibilities.Private
-            }.symbol,
-            createMemberProperty(
-                owner,
-                Key,
-                Name.identifier("properties"),
-                BuiltinTypes.mapType(session),
-            ) {
-                visibility = Visibilities.Private
-            }.symbol,
-            createMemberProperty(
-                owner,
-                Key,
-                Name.identifier("privateProperties"),
-                BuiltinTypes.setType(session),
-            ) {
-                visibility = Visibilities.Private
-            }.symbol
-        )
+        return when (callableId.callableName.asString()) {
+            "source" -> listOf(
+                createMemberProperty(owner, Key, Name.identifier("source"), matchedClassSymbol.defaultType()) {
+                    visibility = Visibilities.Private
+                }.apply {
+                    val parameterSymbol = owner.primaryConstructorSymbol(session)
+                        ?.valueParameterSymbols?.first()
+                        ?: return emptyList()
+
+                    replaceInitializer(
+                        buildCallableReferenceAccess {
+                            calleeReference = buildResolvedNamedReference {
+                                name = parameterSymbol.name
+                                resolvedSymbol = parameterSymbol
+                            }
+                            coneTypeOrNull = parameterSymbol.resolvedReturnType
+                        }
+                    )
+                }.symbol
+            )
+
+            "values" -> return listOf(
+                createMemberProperty(
+                    owner,
+                    Key,
+                    Name.identifier("values"),
+                    BuiltinTypes.mutableMapType(session),
+                ) {
+                    visibility = Visibilities.Private
+                }.symbol
+            )
+
+            "properties" -> return listOf(
+                createMemberProperty(
+                    owner,
+                    Key,
+                    Name.identifier("properties"),
+                    BuiltinTypes.mapType(session),
+                ) {
+                    visibility = Visibilities.Private
+                }.symbol
+            )
+
+            "privateProperties" -> return listOf(
+                createMemberProperty(
+                    owner,
+                    Key,
+                    Name.identifier("privateProperties"),
+                    BuiltinTypes.setType(session),
+                ) {
+                    visibility = Visibilities.Private
+                }.symbol
+            )
+
+            else -> emptyList()
+        }
     }
 
 
+/*
     override fun generateFunctions(
         callableId: CallableId,
         context: MemberGenerationContext?
@@ -128,6 +165,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
         val owner = context?.owner as? FirRegularClassSymbol ?: return emptyList()
         val matchedClassId = owner.matchedClass ?: return emptyList()
         val matchedClassSymbol = session.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
+//        val matchedClassSymbol = session.symbolProvider.getRegularClassSymbolByClassId(matchedClassId) ?: return emptyList()
 
         return when (callableId.callableName.asString()) {
             "contains" -> listOf(
@@ -157,6 +195,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
             else -> emptyList()
         }
     }
+*/
 
     override fun getTopLevelClassIds(): Set<ClassId> {
         return classIdsForMatchedClasses.keys
