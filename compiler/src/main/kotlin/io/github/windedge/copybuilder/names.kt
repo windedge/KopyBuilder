@@ -1,12 +1,46 @@
 package io.github.windedge.copybuilder
 
 import com.squareup.kotlinpoet.ClassName
+import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.util.parentsWithSelf
+import org.jetbrains.kotlin.name.CallableId
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.Name
 
 internal val CopyBuilderFqn = FqName("io.github.windedge.copybuilder")
+
+// Package name for KopyBuilder
+internal val KOPY_BUILDER_PACKAGE = FqName("io.github.windedge.copybuilder")
+
+internal val KOPY_BUILDER_NAME = Name.identifier("KopyBuilder")
+
+internal val CONTAINS_NAME = Name.identifier("contains")
+internal val GET_NAME = Name.identifier("get")
+internal val PUT_NAME = Name.identifier("put")
+internal val BUILD_NAME = Name.identifier("build")
+internal val SOURCE_NAME = Name.identifier("source")
+internal val VALUES_NAME = Name.identifier("values")
+internal val PROPERTIES_NAME = Name.identifier("properties")
+internal val PRIVATE_PROPERTIES_NAME = Name.identifier("privateProperties")
+internal val SOURCE_PARAMETER_NAME = Name.identifier("source")
+
+// CallableIds for Kotlin standard library functions
+internal val MUTABLE_MAP_OF = CallableId(FqName("kotlin.collections"), Name.identifier("mutableMapOf"))
+internal val TO_FUNCTION = CallableId(FqName("kotlin"), Name.identifier("to"))
+internal val MAP_OF = CallableId(FqName("kotlin.collections"), Name.identifier("mapOf"))
+internal val SET_OF = CallableId(FqName("kotlin.collections"), Name.identifier("setOf"))
+
+// ClassIds for Kotlin standard library classes
+internal val PAIR_CLASS_ID = ClassId(FqName("kotlin"), Name.identifier("Pair"))
+
+object Key : GeneratedDeclarationKey() {
+    override fun toString(): String {
+        return "CopyBuilderGeneratorKey"
+    }
+}
 
 internal fun ClassName.toImplClassSimpleName(): String {
     return this.simpleNames.joinToString("")
@@ -38,4 +72,8 @@ fun IrClass.toImplFileName(): String {
 
 fun ClassDescriptor.toImplFileName(): String {
     return this.toClassName().toImplFileName()
+}
+
+internal fun generateImplClassName(baseName: String): Name {
+    return Name.identifier(baseName + "CopyBuilderImpl")
 }

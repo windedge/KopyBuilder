@@ -54,18 +54,73 @@ class CopyBuilderTest {
                 import io.github.windedge.copybuilder.CopyBuilderHost
 
                 @KopyBuilder
-                data class Fruit(val name: String)
+                data class Fruit(val name: String, val weight: Int)
 
                 fun main() {
-                    val fruit = Fruit("apple")
+                    val fruit = Fruit("apple", 12)
                     val fruit2 = (fruit as CopyBuilderHost<Fruit>).copyBuild {
                         put("name", "Pear")
                     }
-                    assert(fruit2 == Fruit("Pear"))
+                    assert(fruit2 == Fruit("Pear", 0))
                 }
                 """
             )
         )
+        assertEquals(ExitCode.OK, result.exitCode)
+    }
+
+    @Test
+    fun shouldGenerateBuilderForSimpleDataClass2() {
+        val result = compile(
+            sourceFile = kotlin(
+                "main.kt", """
+                package test
+
+                import io.github.windedge.copybuilder.KopyBuilder
+                import io.github.windedge.copybuilder.CopyBuilderHost
+
+                @KopyBuilder
+                data class Fruit(val name: String, val weight: Int)
+
+                fun main() {
+                    val fruit = Fruit("apple", 12)
+
+                    val copyBuilder = FruitCopyBuilderImpl(fruit).apply {
+                        put("name", "Pear")
+                    }
+                    assert(copyBuilder.get("name") == "Pear")
+                }
+                """
+            )
+        )
+        assertEquals(ExitCode.OK, result.exitCode)
+    }
+
+    @Test
+    fun shouldFailedGenerateBuilderForSimpleDataClass() {
+        val result = compile(
+            sourceFile = kotlin("main.kt", """
+                import io.github.windedge.copybuilder.KopyBuilder
+                import io.github.windedge.copybuilder.CopyBuilderHost
+
+                @KopyBuilder
+                data class Fruit(val name: String, val weight: Int)
+
+                fun main() {
+                    val fruit = Fruit("apple", 12)
+
+                    val copyBuilder = FruitCopyBuilderImpl(fruit).apply {
+                        // throw exception
+                        put("name", 1)
+                    }
+                    assert(copyBuilder.get("name") == "Pear")
+                }
+                """
+            )
+        )
+        result.run {
+            println("this.messages = ${this.messages}")
+        }
         assertEquals(ExitCode.OK, result.exitCode)
     }
 
@@ -133,7 +188,8 @@ class CopyBuilderTest {
         commandLineProcessor: CommandLineProcessor = CopyBuilderCommandLineProcessor(),
         enabled: Boolean = true,
     ): CompilationResult {
-        return KotlinCompilation().apply {
+        val compilation = KotlinCompilation()
+        return compilation.apply {
             sources = sourceFiles
             compilerPluginRegistrars = listOf(plugin)
             pluginOptions = listOf(

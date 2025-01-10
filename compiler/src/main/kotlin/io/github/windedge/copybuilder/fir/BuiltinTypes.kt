@@ -3,51 +3,70 @@ package io.github.windedge.copybuilder.fir
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.plugin.createConeType
 import org.jetbrains.kotlin.fir.types.ConeKotlinType
+import org.jetbrains.kotlin.fir.types.ConeKotlinTypeProjection
+import org.jetbrains.kotlin.fir.types.ConeTypeProjection
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
-object BuiltinTypes {
-    private val KOTLIN_PACKAGE = FqName("kotlin")
-    private val KOTLIN_COLLECTIONS_PACKAGE = FqName("kotlin.collections")
+private val KOTLIN_PACKAGE = FqName("kotlin")
+private val KOTLIN_COLLECTIONS_PACKAGE = FqName("kotlin.collections")
 
-    private fun ClassId.createType(session: FirSession, nullable: Boolean = false): ConeKotlinType {
-        return createConeType(session, nullable = nullable)
-    }
+private fun ClassId.createType(session: FirSession, nullable: Boolean = false): ConeKotlinType {
+    return createConeType(session, nullable = nullable)
+}
 
-    fun stringType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_PACKAGE, Name.identifier("String")).createType(session)
-    }
+fun FirSession.stringType(): ConeKotlinType {
+    return ClassId(KOTLIN_PACKAGE, Name.identifier("String")).createType(this)
+}
 
-    fun booleanType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_PACKAGE, Name.identifier("Boolean")).createType(session)
-    }
+fun FirSession.booleanType(): ConeKotlinType {
+    return ClassId(KOTLIN_PACKAGE, Name.identifier("Boolean")).createType(this)
+}
 
-    fun anyType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_PACKAGE, Name.identifier("Any")).createType(session)
-    }
+fun FirSession.anyType(): ConeKotlinType {
+    return ClassId(KOTLIN_PACKAGE, Name.identifier("Any")).createType(this)
+}
 
-    fun anyNType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_PACKAGE, Name.identifier("Any")).createType(session, nullable = true)
-    }
+fun FirSession.anyNType(): ConeKotlinType {
+    return ClassId(KOTLIN_PACKAGE, Name.identifier("Any")).createType(this, nullable = true)
+}
 
-    fun unitType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_PACKAGE, Name.identifier("Unit")).createType(session)
-    }
+fun FirSession.unitType(): ConeKotlinType {
+    return ClassId(KOTLIN_PACKAGE, Name.identifier("Unit")).createType(this)
+}
 
-    fun mapType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("Map")).createType(session)
-    }
+fun FirSession.mapType(
+    typeArguments: Array<ConeTypeProjection> = emptyArray()
+): ConeKotlinType {
+    val classId = ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("Map"))
+    return classId.createConeType(this, typeArguments)
+}
 
-    fun mutableMapType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("MutableMap")).createType(session)
-    }
+fun FirSession.mutableMapType(
+    typeArguments: Array<ConeTypeProjection> = emptyArray()
+): ConeKotlinType {
+    val classId = ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("MutableMap"))
+    return classId.createConeType(this, typeArguments)
+}
 
-    fun setType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("Set")).createType(session)
-    }
+fun FirSession.setType(
+    typeArguments: Array<ConeTypeProjection> = emptyArray()
+): ConeKotlinType {
+    val classId = ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("Set"))
+    return classId.createConeType(this, typeArguments)
+}
 
-    fun mutableSetType(session: FirSession): ConeKotlinType {
-        return ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("MutableSet")).createType(session)
-    }
+fun FirSession.mutableSetType(
+    typeArguments: Array<ConeTypeProjection> = emptyArray()
+): ConeKotlinType {
+    val classId = ClassId(KOTLIN_COLLECTIONS_PACKAGE, Name.identifier("MutableSet"))
+    return classId.createConeType(this, typeArguments)
+}
+
+fun FirSession.kClassType(
+    typeArguments: Array<ConeTypeProjection> = emptyArray()
+): ConeKotlinType {
+    val classId = ClassId(FqName("kotlin.reflect"), Name.identifier("KClass"))
+    return classId.createConeType(this, typeArguments)
 }

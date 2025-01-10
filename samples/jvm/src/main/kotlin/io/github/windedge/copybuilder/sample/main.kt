@@ -3,6 +3,8 @@
 package io.github.windedge.copybuilder.sample
 
 import io.github.windedge.copybuilder.KopyBuilder
+import kotlin.reflect.KClass
+import kotlin.reflect.KClassifier
 
 
 @KopyBuilder
@@ -40,12 +42,18 @@ fun main() {
 //    }
 
     runCatching {
-        val clazz = Person::class.java.classLoader.loadClass("test.PersonCopyBuilderImpl")
+        val clazz = Person::class.java.classLoader.loadClass("io.github.windedge.copybuilder.sample.PersonCopyBuilderImpl")
         println("clazz = ${clazz}")
     }.onFailure(::println)
 
 
     println("person2 = ${person}")
 
+    val copyBuilder = PersonCopyBuilderImpl(person).apply {
+        put("name", "Ken")
+    }
+    println("copyBuilder.get(\"name\") = ${copyBuilder.get("name")}")
+
+    copyBuilder.put("name", 1)
 }
 

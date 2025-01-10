@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
 
 class CopyBuilderIrGenerationExtension : IrGenerationExtension {
     override fun generate(moduleFragment: IrModuleFragment, pluginContext: IrPluginContext) {
-        CopyBuilderIrFunctionsTransformer(moduleFragment, pluginContext).let { transformer ->
+        CopyBuilderIrTransformer(pluginContext).let { transformer ->
             moduleFragment.transform(transformer, null)
         }
     }
