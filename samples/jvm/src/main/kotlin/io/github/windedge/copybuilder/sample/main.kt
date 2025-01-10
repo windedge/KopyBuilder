@@ -54,6 +54,9 @@ fun main() {
     }
     println("copyBuilder.get(\"name\") = ${copyBuilder.get("name")}")
 
-    copyBuilder.put("name", 1)
+    val person2 = person.copyBuild {
+        put("name", "Ken")
+    }
+    println("person2 = ${person2}")
 }
 

@@ -25,10 +25,8 @@ import org.jetbrains.kotlin.name.SpecialNames
 @OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
 class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDeclarationGenerationExtension(session) {
     companion object {
-        private val PREDICATE =
-            LookupPredicate.create { annotated(KOPY_BUILDER_PACKAGE.child(KOPY_BUILDER_NAME)) }
+        private val PREDICATE = LookupPredicate.create { annotated(CopyBuilderClassFqn) }
     }
-
 
     private val predicateBasedProvider = session.predicateBasedProvider
     private val matchedClasses by lazy {

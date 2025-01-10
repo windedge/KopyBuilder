@@ -70,6 +70,10 @@ fun IrType.isKopyBuilder(): Boolean {
 }
 
 // Check if type is CopyBuilderHost interface
+fun IrType.isCopyBuilder(): Boolean {
+    return this.classFqName == CopyBuilderFqn.child(Name.identifier("CopyBuilder"))
+}
+
 fun IrType.isCopyBuilderHost(): Boolean {
     return this.classFqName == CopyBuilderFqn.child(Name.identifier("CopyBuilderHost"))
 }

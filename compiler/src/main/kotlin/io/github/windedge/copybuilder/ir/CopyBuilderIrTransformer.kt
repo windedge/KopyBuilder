@@ -7,6 +7,8 @@ import org.jetbrains.kotlin.backend.jvm.functionByName
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
+import org.jetbrains.kotlin.ir.declarations.IrConstructor
+import org.jetbrains.kotlin.ir.declarations.IrDeclarationContainer
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -16,22 +18,17 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.SpecialNames
+import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 
 class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrElementTransformerVoid() {
 
     private val irBuiltIn = pluginContext.irBuiltIns
 
     override fun visitClass(declaration: IrClass): IrStatement {
-        // Check if class has @KopyBuilder annotation and implements CopyBuilderHost interface
-        val hasKopyBuilderAnnotation = declaration.annotations.any { it.type.isKopyBuilder() }
-        val implementsCopyBuilderHost = declaration.superTypes.any { it.isCopyBuilderHost() }
-
-        if (!hasKopyBuilderAnnotation || !implementsCopyBuilderHost) {
-            return declaration
-        }
-
         return super.visitClass(declaration).also {
-            println("transformed class: \n${it.dumpKotlinLike()}")
+            declaration.takeIf { it.superTypes.any { it.isCopyBuilder() } }?.let {
+                println("transformed class: \n${it.dumpKotlinLike()}")
+            }
         }
     }
 
@@ -429,7 +426,6 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
         }
         return declaration
     }
-
 
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun getSourceClass(property: IrProperty): IrClass {

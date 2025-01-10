@@ -1,30 +1,23 @@
 package io.github.windedge.copybuilder.fir
 
+import io.github.windedge.copybuilder.CopyBuilderClassFqn
+import io.github.windedge.copybuilder.CopyBuilderHostClassId
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirImplementationDetail
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirClassLikeDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirRegularClass
-import org.jetbrains.kotlin.fir.declarations.utils.classId
 import org.jetbrains.kotlin.fir.extensions.FirDeclarationPredicateRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirSupertypeGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.predicate.DeclarationPredicate
 import org.jetbrains.kotlin.fir.extensions.predicateBasedProvider
 import org.jetbrains.kotlin.fir.resolve.defaultType
-import org.jetbrains.kotlin.fir.types.ConeKotlinType
-import org.jetbrains.kotlin.fir.types.FirResolvedTypeRef
-import org.jetbrains.kotlin.fir.types.classId
-import org.jetbrains.kotlin.fir.types.constructClassLikeType
-import org.jetbrains.kotlin.name.ClassId
-import org.jetbrains.kotlin.name.FqName
-import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.fir.types.*
 
 class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertypeGenerationExtension(session) {
     companion object {
-        private val KOPY_BUILDER_PACKAGE = FqName("io.github.windedge.copybuilder")
-        private val copyBuilderHostClassId = ClassId(KOPY_BUILDER_PACKAGE, Name.identifier("CopyBuilderHost"))
         private val PREDICATE = DeclarationPredicate.create {
-            annotated(KOPY_BUILDER_PACKAGE.child(Name.identifier("KopyBuilder")))
+            annotated(CopyBuilderClassFqn)
         }
     }
 
@@ -42,10 +35,12 @@ class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertyp
 
             else -> return emptyList()
         }
-        if (resolvedSupertypes.any { it.coneType.classId == copyBuilderHostClassId }) return emptyList()
+        if (resolvedSupertypes.any { it.coneType.classId == CopyBuilderHostClassId }) return emptyList()
 
-        val coneClassLikeType = copyBuilderHostClassId.constructClassLikeType(
-            arrayOf(classLikeDeclaration.classId.defaultType(emptyList())),
+        val coneClassLikeType = CopyBuilderHostClassId.constructClassLikeType(
+            arrayOf(
+                classLikeDeclaration.defaultType().toTypeProjection(ProjectionKind.INVARIANT)
+            ),
         )
 //        val resolvedTypeRef = FirResolvedTypeRefImpl(
 //            null, mutableListOf<FirAnnotation>().toMutableOrEmpty(), coneClassLikeType, null
