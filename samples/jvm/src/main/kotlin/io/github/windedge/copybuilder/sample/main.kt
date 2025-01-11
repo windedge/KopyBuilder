@@ -47,15 +47,15 @@ fun main() {
     }.onFailure(::println)
 
 
-    println("person2 = ${person}")
+    println("person = ${person}")
 
-    val copyBuilder = PersonCopyBuilderImpl(person).apply {
+    val copyBuilder = person.toCopyBuilder().apply {
         put("name", "Ken")
     }
     println("copyBuilder.get(\"name\") = ${copyBuilder.get("name")}")
 
     val person2 = person.copyBuild {
-        put("name", "Ken")
+        put("name", "Kenx")
     }
     println("person2 = ${person2}")
 }

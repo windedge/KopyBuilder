@@ -1,6 +1,6 @@
 package io.github.windedge.copybuilder.fir
 
-import io.github.windedge.copybuilder.CopyBuilderClassFqn
+import io.github.windedge.copybuilder.KopyBuilderClassFqn
 import io.github.windedge.copybuilder.CopyBuilderHostClassId
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirImplementationDetail
@@ -17,7 +17,7 @@ import org.jetbrains.kotlin.fir.types.*
 class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertypeGenerationExtension(session) {
     companion object {
         private val PREDICATE = DeclarationPredicate.create {
-            annotated(CopyBuilderClassFqn)
+            annotated(KopyBuilderClassFqn)
         }
     }
 

@@ -16,10 +16,12 @@ internal val CopyBuilderFqn = FqName("io.github.windedge.copybuilder")
 // Names for KopyBuilder
 internal val KOPY_BUILDER_PACKAGE = FqName("io.github.windedge.copybuilder")
 internal val KOPY_BUILDER_NAME = Name.identifier("KopyBuilder")
+internal val COPY_BUILDER_NAME = Name.identifier("CopyBuilder")
 internal val COPY_BUILDER_HOST_NAME = Name.identifier("CopyBuilderHost")
 
-internal val CopyBuilderClassFqn = KOPY_BUILDER_PACKAGE.child(KOPY_BUILDER_NAME)
+internal val KopyBuilderClassFqn = KOPY_BUILDER_PACKAGE.child(KOPY_BUILDER_NAME)
 internal val KopyBuilderClassId = ClassId(KOPY_BUILDER_PACKAGE, KOPY_BUILDER_NAME)
+internal val CopyBuilderClassId = ClassId(KOPY_BUILDER_PACKAGE, COPY_BUILDER_NAME)
 internal val CopyBuilderHostClassId = ClassId(KOPY_BUILDER_PACKAGE, COPY_BUILDER_HOST_NAME)
 
 internal val CONTAINS_NAME = Name.identifier("contains")

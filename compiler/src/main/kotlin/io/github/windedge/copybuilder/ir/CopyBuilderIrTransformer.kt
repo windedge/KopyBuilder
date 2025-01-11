@@ -7,8 +7,6 @@ import org.jetbrains.kotlin.backend.jvm.functionByName
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrConstructor
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationContainer
 import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
@@ -18,7 +16,6 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.SpecialNames
-import org.jetbrains.kotlin.utils.addToStdlib.ifTrue
 
 class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrElementTransformerVoid() {
 
@@ -264,12 +261,12 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             val properties = sourceClass.properties
             +irReturn(
                 irWhen(
-                    type = context.irBuiltIns.unitType,
+                    type = context.irBuiltIns.anyNType,
                     branches =
                         properties.map { property ->
                             val propertyName = property.name.asString()
                             val condition = irEquals(irGet(propertyNameParam), irString(propertyName))
-                            val source = irCall(sourceProperty.getter!!)
+                            val source = irCall(sourceProperty.getter!!).apply { dispatchReceiver = irGet((self!!)) }
                             val getter = irCall(property.getter!!).apply { dispatchReceiver = source }
                             irBranch(condition, getter)
                         }.toList() + irElseBranch(

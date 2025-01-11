@@ -17,6 +17,7 @@ import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.getRegularClassSymbolByClassId
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.ConeStarProjection
+import org.jetbrains.kotlin.fir.types.constructClassLikeType
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
@@ -25,7 +26,7 @@ import org.jetbrains.kotlin.name.SpecialNames
 @OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
 class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDeclarationGenerationExtension(session) {
     companion object {
-        private val PREDICATE = LookupPredicate.create { annotated(CopyBuilderClassFqn) }
+        private val PREDICATE = LookupPredicate.create { annotated(KopyBuilderClassFqn) }
     }
 
     private val predicateBasedProvider = session.predicateBasedProvider
@@ -45,7 +46,9 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
             error("@KopyBuilder can only be applied to data classes")
         }
 
-        return createTopLevelClass(classId, Key).also {
+        return createTopLevelClass(classId, Key) {
+            superType(CopyBuilderClassId.constructClassLikeType(arrayOf(matchedClass.defaultType())))
+        }.also {
             it.matchedClass = matchedClass.classId
         }.symbol
     }
@@ -127,7 +130,6 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
             else -> emptyList()
         }
     }
-
 
     override fun generateFunctions(
         callableId: CallableId,
