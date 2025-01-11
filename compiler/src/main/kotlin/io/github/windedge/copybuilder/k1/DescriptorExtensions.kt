@@ -1,7 +1,7 @@
-package io.github.windedge.copybuilder
+package io.github.windedge.copybuilder.k1
 
 import com.squareup.kotlinpoet.ClassName
-import org.jetbrains.kotlin.backend.common.serialization.findPackage
+import io.github.windedge.copybuilder.toImplFileName
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.resolve.descriptorUtil.*

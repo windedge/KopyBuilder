@@ -1,8 +1,8 @@
-package io.github.windedge.copybuilder
+package io.github.windedge.copybuilder.k2
 
-import io.github.windedge.copybuilder.fir.CopyBuilderFirDeclarationGenerationExtension
-import io.github.windedge.copybuilder.fir.CopyBuilderHostFirDeclarationGenerationExtension
-import io.github.windedge.copybuilder.fir.CopyBuilderSupertypeGenerationExtension
+import io.github.windedge.copybuilder.k2.fir.CopyBuilderFirDeclarationGenerationExtension
+import io.github.windedge.copybuilder.k2.fir.CopyBuilderHostFirDeclarationGenerationExtension
+import io.github.windedge.copybuilder.k2.fir.CopyBuilderSupertypeGenerationExtension
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 
 class CopyBuilderFirExtensionRegistar : FirExtensionRegistrar() {

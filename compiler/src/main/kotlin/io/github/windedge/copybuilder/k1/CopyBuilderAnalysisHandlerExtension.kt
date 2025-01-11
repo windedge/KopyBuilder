@@ -1,20 +1,13 @@
-package io.github.windedge.copybuilder.ir
+package io.github.windedge.copybuilder.k1
 
 import io.github.windedge.copybuilder.KEY_OUTPUT_DIR
-import io.github.windedge.copybuilder.toGeneratedCopyBuilderPath
 import org.jetbrains.kotlin.analyzer.AnalysisResult
 import org.jetbrains.kotlin.backend.jvm.ir.psiElement
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.INFO
-import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity.WARNING
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
-import org.jetbrains.kotlin.com.intellij.openapi.extensions.ExtensionPoint
 import org.jetbrains.kotlin.com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.com.intellij.psi.PsiManager
-import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeAdapter
-import org.jetbrains.kotlin.com.intellij.psi.PsiTreeChangeListener
-import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.ModuleDescriptor
@@ -25,8 +18,12 @@ import org.jetbrains.kotlin.resolve.BindingTrace
 import org.jetbrains.kotlin.resolve.extensions.AnalysisHandlerExtension
 import org.jetbrains.kotlin.utils.addToStdlib.ifNotEmpty
 import java.nio.file.Files
-import kotlin.io.path.*
-
+import kotlin.io.path.absolute
+import kotlin.io.path.deleteIfExists
+import kotlin.io.path.exists
+import kotlin.io.path.getLastModifiedTime
+import kotlin.io.path.notExists
+import kotlin.io.path.pathString
 
 class CopyBuilderAnalysisHandlerExtension(
     configuration: CompilerConfiguration,
@@ -36,14 +33,14 @@ class CopyBuilderAnalysisHandlerExtension(
 
     private var didRecompile = false
 
-    private val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.NONE)
+    private val messageCollector = configuration.get(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, MessageCollector.Companion.NONE)
     private val outputDir = configuration.get(KEY_OUTPUT_DIR) ?: error("Output dir must not be empty.")
 
 
     override fun analysisCompleted(
         project: Project, module: ModuleDescriptor, bindingTrace: BindingTrace, files: Collection<KtFile>
     ): AnalysisResult? {
-        messageCollector.report(WARNING, "analysisCompleted")
+        messageCollector.report(CompilerMessageSeverity.WARNING, "analysisCompleted")
         val psiManager = PsiManager.getInstance(project)
 /*
         if (didRecompile) {
@@ -58,7 +55,7 @@ class CopyBuilderAnalysisHandlerExtension(
             didRecompile = true
         }
 */
-        messageCollector.report(WARNING, "didRecompile = ${didRecompile}")
+        messageCollector.report(CompilerMessageSeverity.WARNING, "didRecompile = ${didRecompile}")
         if (didRecompile) return null
         didRecompile = true
 
@@ -69,14 +66,14 @@ class CopyBuilderAnalysisHandlerExtension(
         val generatedFiles = outputDir.toFile().walkTopDown().filter {
             it.isFile && it.startsWith(outputDir.pathString)
         }.map { it.toPath() }.toMutableList()
-        messageCollector.report(INFO, "generatedFiles = ${generatedFiles}")
+        messageCollector.report(CompilerMessageSeverity.INFO, "generatedFiles = ${generatedFiles}")
 
         val classes = bindingTrace.bindingContext.getSliceContents(BindingContext.CLASS).values
-        messageCollector.report(INFO, "Known classes = ${classes}")
+        messageCollector.report(CompilerMessageSeverity.INFO, "Known classes = ${classes}")
         val (outdatedAnnotatedClasses, uptodateAnnotatedClasses) =
             classes.filter { it.isAnnotatedClass() }.partition { it.isOutdatedClass() }
-        messageCollector.report(INFO, "outdatedAnnotatedClasses = ${outdatedAnnotatedClasses}")
-        messageCollector.report(INFO, "uptodateAnnotatedClasses = ${uptodateAnnotatedClasses}")
+        messageCollector.report(CompilerMessageSeverity.INFO, "outdatedAnnotatedClasses = ${outdatedAnnotatedClasses}")
+        messageCollector.report(CompilerMessageSeverity.INFO, "uptodateAnnotatedClasses = ${uptodateAnnotatedClasses}")
 
         if (outdatedAnnotatedClasses.isEmpty() && uptodateAnnotatedClasses.isEmpty()) {
             return null
@@ -87,7 +84,7 @@ class CopyBuilderAnalysisHandlerExtension(
             it.toGeneratedCopyBuilderPath(outputDir).absolute()
         }
         generatedFiles.filter { it !in uptodateGeneratedFiles }.ifNotEmpty {
-            messageCollector.report(WARNING, "outdatedFiles = ${this}")
+            messageCollector.report(CompilerMessageSeverity.WARNING, "outdatedFiles = ${this}")
             this.forEach { it.deleteIfExists() }
         }
 
@@ -113,7 +110,7 @@ class CopyBuilderAnalysisHandlerExtension(
         if (!annotations.hasAnnotation(annotationFqName)) return false
 
         if (!isData) {
-            messageCollector.report(WARNING, "${this.name} can't generate CopyBuilder, only support dataclass.")
+            messageCollector.report(CompilerMessageSeverity.WARNING, "${this.name} can't generate CopyBuilder, only support dataclass.")
             return false
         }
         return true

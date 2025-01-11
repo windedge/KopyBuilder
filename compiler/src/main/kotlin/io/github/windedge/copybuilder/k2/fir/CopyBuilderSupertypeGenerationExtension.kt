@@ -1,4 +1,4 @@
-package io.github.windedge.copybuilder.fir
+package io.github.windedge.copybuilder.k2.fir
 
 import io.github.windedge.copybuilder.KopyBuilderClassFqn
 import io.github.windedge.copybuilder.CopyBuilderHostClassId
@@ -42,13 +42,6 @@ class CopyBuilderSupertypeGenerationExtension(session: FirSession) : FirSupertyp
                 classLikeDeclaration.defaultType().toTypeProjection(ProjectionKind.INVARIANT)
             ),
         )
-//        val resolvedTypeRef = FirResolvedTypeRefImpl(
-//            null, mutableListOf<FirAnnotation>().toMutableOrEmpty(), coneClassLikeType, null
-//        )
-//        val resolvedTypeRef = buildResolvedTypeRef { type = coneClassLikeType }
-
-//        if (resolvedSupertypes.any { it == resolvedTypeRef }) return emptyList()
-
         return listOf(coneClassLikeType)
     }
 

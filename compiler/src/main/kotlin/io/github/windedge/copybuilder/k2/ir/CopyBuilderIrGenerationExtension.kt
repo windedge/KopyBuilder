@@ -1,4 +1,4 @@
-package io.github.windedge.copybuilder.ir
+package io.github.windedge.copybuilder.k2.ir
 
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext

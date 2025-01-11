@@ -1,4 +1,4 @@
-package io.github.windedge.copybuilder.ir
+package io.github.windedge.copybuilder.k2.ir
 
 import io.github.windedge.copybuilder.*
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
@@ -20,14 +20,6 @@ import org.jetbrains.kotlin.name.SpecialNames
 class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrElementTransformerVoid() {
 
     private val irBuiltIn = pluginContext.irBuiltIns
-
-    override fun visitClass(declaration: IrClass): IrStatement {
-        return super.visitClass(declaration).also {
-            declaration.takeIf { it.superTypes.any { it.isCopyBuilder() } }?.let {
-                println("transformed class: \n${it.dumpKotlinLike()}")
-            }
-        }
-    }
 
     override fun visitFunction(declaration: IrFunction): IrStatement {
         fun originalFunction(): IrStatement = super.visitFunction(declaration)

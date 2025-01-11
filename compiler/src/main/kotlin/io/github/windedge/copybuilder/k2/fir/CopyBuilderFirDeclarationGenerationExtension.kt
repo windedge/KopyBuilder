@@ -1,4 +1,4 @@
-package io.github.windedge.copybuilder.fir
+package io.github.windedge.copybuilder.k2.fir
 
 import io.github.windedge.copybuilder.*
 import org.jetbrains.kotlin.descriptors.Visibilities

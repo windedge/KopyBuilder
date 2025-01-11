@@ -1,9 +1,8 @@
-package io.github.windedge.copybuilder.ir
+package io.github.windedge.copybuilder.k1
 
 import org.jetbrains.kotlin.backend.common.extensions.IrGenerationExtension
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.ir.declarations.IrModuleFragment
-
 
 class CopyBuilderGenerationExtension(
     private val annotationName: String = "io.github.windedge.copybuilder.KopyBuilder"
@@ -14,4 +13,3 @@ class CopyBuilderGenerationExtension(
         moduleFragment.transform(transformer, null)
     }
 }
-

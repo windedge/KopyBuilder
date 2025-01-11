@@ -1,6 +1,7 @@
 package io.github.windedge.copybuilder
 
 import com.squareup.kotlinpoet.ClassName
+import io.github.windedge.copybuilder.k1.toClassName
 import org.jetbrains.kotlin.GeneratedDeclarationKey
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.ir.declarations.IrClass

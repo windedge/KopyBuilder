@@ -1,4 +1,4 @@
-package io.github.windedge.copybuilder.ir
+package io.github.windedge.copybuilder.k1
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
