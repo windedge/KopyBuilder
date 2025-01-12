@@ -379,7 +379,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
      * override fun build(): SomeDataClass = SomeDataClass(
      *   field1 = this.get("field1") as String?,
      *   field2 = this.get("field2") as Boolean,
-     *   field3 = this.get("field3") as Boolean
+     *   field3 = this.get("field3") as Int
      * )
      * ```
      */

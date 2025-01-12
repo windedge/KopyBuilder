@@ -74,22 +74,27 @@ class CopyBuilderTest {
         val result = compile(
             sourceFile = kotlin(
                 "main.kt", """
-                package test
+package test
 
-                import io.github.windedge.copybuilder.KopyBuilder
-                import io.github.windedge.copybuilder.CopyBuilderHost
+import io.github.windedge.copybuilder.KopyBuilder
+import io.github.windedge.copybuilder.CopyBuilder
+import io.github.windedge.copybuilder.CopyBuilderHost
 
-                @KopyBuilder
-                data class Fruit(val name: String, val weight: Int)
+@KopyBuilder
+data class Fruit(val name: String, val weight: Int)
 
-                fun main() {
-                    val fruit = Fruit("apple", 12)
+fun main() {
+    val fruit = Fruit("apple", 12)
 
-                    val copyBuilder = FruitCopyBuilderImpl(fruit).apply {
-                        put("name", "Pear")
-                    }
-                    assert(copyBuilder.get("name") == "Pear")
-                }
+    val copyBuilder = Fruit.CopyBuilderImpl(fruit)
+    copyBuilder.put("name", "Pear")
+    assert(copyBuilder.get("name") == "Pear")
+
+    val newFruit = fruit.copyBuild {
+        put("name", "Pear")
+    }
+    assert(newFruit.name == "Pear")
+}
                 """
             )
         )

@@ -49,7 +49,7 @@ class CopyBuilderHostIrTransformer(private val pluginContext: IrPluginContext) :
      *
      * Example generated function:
      * ```kotlin
-     * override fun toCopyBuilder(): CopyBuilder<SomeDataClass> = SomeDataClassCopyBuilderImpl(this)
+     * override fun toCopyBuilder(): CopyBuilder<SomeDataClass> = CopyBuilderImpl(this)
      * ```
      */
     @OptIn(UnsafeDuringIrConstructionAPI::class)
@@ -60,14 +60,14 @@ class CopyBuilderHostIrTransformer(private val pluginContext: IrPluginContext) :
         declaration.isFakeOverride = false
         declaration.body = pluginContext.declarationIrBuilder(declaration.symbol).irBlockBody {
             val dataClass = declaration.parentAsClass
-            val implClassName = dataClass.name.asString() + "CopyBuilderImpl"
-
-            val implClass = pluginContext.referenceClass(dataClass.toImplClassId()) ?: error(
-                """Implementation class $implClassName not found.
+            val implClass = dataClass.declarations.filterIsInstance<IrClass>()
+                .find { it.name.asString() == "CopyBuilderImpl" }
+                ?: error(
+                    """Implementation class CopyBuilderImpl not found.
                            Make sure CopyBuilderIrTransformer runs before CopyBuilderHostIrTransformer."""
-            )
+                )
 
-            val constructor = implClass.owner.primaryConstructor ?: error("No constructor found in $implClassName")
+            val constructor = implClass.primaryConstructor ?: error("No constructor found in CopyBuilderImpl")
             +irReturn(
                 irCall(constructor).apply {
                     type = constructor.returnType

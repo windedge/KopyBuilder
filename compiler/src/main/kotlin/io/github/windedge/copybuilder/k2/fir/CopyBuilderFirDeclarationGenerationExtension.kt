@@ -12,9 +12,10 @@ import org.jetbrains.kotlin.fir.extensions.predicate.LookupPredicate
 import org.jetbrains.kotlin.fir.plugin.createConstructor
 import org.jetbrains.kotlin.fir.plugin.createMemberFunction
 import org.jetbrains.kotlin.fir.plugin.createMemberProperty
-import org.jetbrains.kotlin.fir.plugin.createTopLevelClass
+import org.jetbrains.kotlin.fir.plugin.createNestedClass
 import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.resolve.providers.getRegularClassSymbolByClassId
+import org.jetbrains.kotlin.fir.resolve.providers.symbolProvider
 import org.jetbrains.kotlin.fir.symbols.impl.*
 import org.jetbrains.kotlin.fir.types.ConeStarProjection
 import org.jetbrains.kotlin.fir.types.constructClassLikeType
@@ -26,32 +27,48 @@ import org.jetbrains.kotlin.name.SpecialNames
 @OptIn(ExperimentalTopLevelDeclarationsGenerationApi::class)
 class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDeclarationGenerationExtension(session) {
     companion object {
-        private val PREDICATE = LookupPredicate.create { annotated(KopyBuilderClassFqn) }
+        private val PREDICATE = LookupPredicate.create {
+            annotated(KopyBuilderClassFqn)
+        }
     }
 
     private val predicateBasedProvider = session.predicateBasedProvider
     private val matchedClasses by lazy {
         predicateBasedProvider.getSymbolsByPredicate(PREDICATE).filterIsInstance<FirRegularClassSymbol>()
     }
-    private val classIdsForMatchedClasses: Map<ClassId, FirRegularClassSymbol> by lazy {
-        matchedClasses.associateBy {
-            val implClassName = generateImplClassName(it.classId.shortClassName.asString())
-            ClassId(it.classId.packageFqName, implClassName)
-        }
+
+    // Define nested class scope for data class with @KopyBuilder annotation
+    override fun getNestedClassifiersNames(
+        classSymbol: FirClassSymbol<*>,
+        context: NestedClassGenerationContext
+    ): Set<Name> {
+        val matchedClass = classSymbol as? FirRegularClassSymbol ?: return emptySet()
+        if (matchedClass !in matchedClasses) return emptySet()
+
+        return setOf(Name.identifier("CopyBuilderImpl"))
     }
 
-    override fun generateTopLevelClassLikeDeclaration(classId: ClassId): FirClassLikeSymbol<*>? {
-        val matchedClass = classIdsForMatchedClasses[classId] ?: return null
+    // Generate nested class for data class with @KopyBuilder annotation
+    override fun generateNestedClassLikeDeclaration(
+        owner: FirClassSymbol<*>,
+        name: Name,
+        context: NestedClassGenerationContext
+    ): FirClassLikeSymbol<*>? {
+        val matchedClass = owner as? FirRegularClassSymbol ?: return null
         if (!matchedClass.isData) {
             error("@KopyBuilder can only be applied to data classes")
         }
+        if (matchedClass !in matchedClasses) return null
+        if (name.asString() != "CopyBuilderImpl") return null
 
-        return createTopLevelClass(classId, Key) {
+        return createNestedClass(owner, name, Key) {
+            visibility = Visibilities.Public
             superType(CopyBuilderClassId.constructClassLikeType(arrayOf(matchedClass.defaultType())))
         }.also {
             it.matchedClass = matchedClass.classId
         }.symbol
     }
+
 
     override fun getCallableNamesForClass(
         classSymbol: FirClassSymbol<*>,
@@ -76,10 +93,15 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
     }
 
     override fun generateConstructors(context: MemberGenerationContext): List<FirConstructorSymbol> {
-        val classId = context.owner.classId
-        val matchedClass = classIdsForMatchedClasses[classId] ?: return emptyList()
+        val owner = context.owner as? FirRegularClassSymbol ?: return emptyList()
+        if (owner.name.asString() != "CopyBuilderImpl") return emptyList()
+        
+        val dataClassId = owner.matchedClass ?: return emptyList()
+        val dataClass = session.symbolProvider.getClassLikeSymbolByClassId(dataClassId) as? FirRegularClassSymbol
+            ?: return emptyList()
+        
         val constructor = createConstructor(context.owner, Key, isPrimary = true) {
-            valueParameter(SOURCE_PARAMETER_NAME, matchedClass.defaultType())
+            valueParameter(SOURCE_PARAMETER_NAME, dataClass.defaultType())
         }
         return listOf(constructor.symbol)
     }
@@ -141,12 +163,7 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
 
         return when (callableId.callableName) {
             CONTAINS_NAME -> listOf(
-                createMemberFunction(
-                    owner,
-                    Key,
-                    CONTAINS_NAME,
-                    session.booleanType()
-                ) {
+                createMemberFunction(owner, Key, CONTAINS_NAME, session.booleanType()) {
                     valueParameter(Name.identifier("key"), session.stringType())
                 }.symbol
             )
@@ -166,10 +183,6 @@ class CopyBuilderFirDeclarationGenerationExtension(session: FirSession) : FirDec
 
             else -> emptyList()
         }
-    }
-
-    override fun getTopLevelClassIds(): Set<ClassId> {
-        return classIdsForMatchedClasses.keys
     }
 
     override fun FirDeclarationPredicateRegistrar.registerPredicates() {
