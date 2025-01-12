@@ -17,6 +17,15 @@ plugins {
 
 [//]: # (#### Download ![maven-central]&#40;https://img.shields.io/nexus/snapshots/https/s01.oss.sonatype.org/io.github.windedge.copybuilder/kopybuilder&#41;)
 
+### Version Compatibility
+
+Below is a table showing the compatibility between KopyBuilder versions and Kotlin versions:
+
+| KopyBuilder Version | Kotlin Version |
+|---------------------|----------------|
+| 0.1.6               | 1.8.x, 1.9.x   |
+| 0.2.0               | 2.0.x, 2.1.0   |
+
 
 ### Code Generation
 
