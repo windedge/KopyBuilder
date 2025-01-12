@@ -1,12 +1,13 @@
 # KopyBuilder
 
-This is a compiler plugin that generates a builder class for Kotlin's `data class`. You can `get` and `put` properties from the builder, similar to a `Map`, and finally `build` a new instance.
+This is a compiler plugin that generates a builder class for Kotlin data classes. You can `get` and `put` properties in the builder, similar to a Map, and finally `build` a new instance.
+
 
 ## Usage
 
 ### Gradle Setup
 
-Currently, it supports Kotlin versions 1.8 and 1.9.
+Currently, it supports Kotlin versions 1.8, 1.9 and 2.x.
 
 ```
 plugins {
