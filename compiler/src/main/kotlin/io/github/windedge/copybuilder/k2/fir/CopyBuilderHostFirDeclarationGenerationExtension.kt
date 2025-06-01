@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.fir.resolve.defaultType
 import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
-import org.jetbrains.kotlin.fir.types.classId
 import org.jetbrains.kotlin.fir.types.constructClassLikeType
 import org.jetbrains.kotlin.name.CallableId
 import org.jetbrains.kotlin.name.Name
@@ -72,7 +71,7 @@ class CopyBuilderHostFirDeclarationGenerationExtension(session: FirSession) :
             parameters = emptyList(),
             receiverType = builderType,
             rawReturnType = session.builtinTypes.unitType.coneType,
-            contextReceivers = emptyList()
+            contextParameters = emptyList()
         )
         return createMemberFunction(owner, Key, COPY_BUILD_NAME, ownerType) {
             status { isOverride = true }
