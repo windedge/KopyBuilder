@@ -6,3 +6,4 @@ build/
 .gradle/
 local.properties
 **/*.kotlin_builtins
+.aider*
