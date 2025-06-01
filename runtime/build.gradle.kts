@@ -31,6 +31,12 @@ kotlin {
     linuxX64()
     macosArm64()
     mingwX64()
+    
+    // iOS targets
+    iosArm64()
+    iosX64()
+    iosSimulatorArm64()
+    
     /*
         val osName = System.getProperty("os.name")
         val osArch = System.getProperty("os.arch")
