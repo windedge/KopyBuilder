@@ -27,7 +27,11 @@ jobs:
           git checkout main
           
           # Update version number
-          sed -i "s/VERSION_NAME=.*/VERSION_NAME=${{ steps.get_version.outputs.VERSION }}/" gradle.properties
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            sed -i '' "s/VERSION_NAME=.*/VERSION_NAME=${{ steps.get_version.outputs.VERSION }}/" gradle.properties
+          else
+            sed -i "s/VERSION_NAME=.*/VERSION_NAME=${{ steps.get_version.outputs.VERSION }}/" gradle.properties
+          fi
           
           # Commit and push changes
           git config --local user.email "action@github.com"
