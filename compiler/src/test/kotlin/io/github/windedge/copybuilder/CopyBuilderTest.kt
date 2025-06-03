@@ -1,13 +1,8 @@
 package io.github.windedge.copybuilder
 
-import com.tschuchort.compiletesting.CompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.KotlinCompilation.ExitCode
-import com.tschuchort.compiletesting.PluginOption
-import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.SourceFile.Companion.kotlin
-import org.jetbrains.kotlin.compiler.plugin.CommandLineProcessor
-import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -17,9 +12,7 @@ import kotlin.test.assertEquals
 const val pluginId = "io.github.windedge.copybuilder.compiler"
 
 @OptIn(ExperimentalCompilerApi::class)
-class CopyBuilderTest {
-    @TempDir
-    lateinit var temporaryFolder: File
+class CopyBuilderTest : BaseKopyBuilderTest() {
 
     /**
      * Basic compilation test
@@ -104,7 +97,8 @@ fun main() {
     @Test
     fun shouldFailedGenerateBuilderForSimpleDataClass() {
         val result = compile(
-            sourceFile = kotlin("main.kt", """
+            sourceFile = kotlin(
+                "main.kt", """
                 import io.github.windedge.copybuilder.KopyBuilder
                 import io.github.windedge.copybuilder.CopyBuilderHost
 
@@ -186,36 +180,72 @@ fun main() {
         assertEquals(ExitCode.INTERNAL_ERROR, result.exitCode)
     }
 
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFiles: List<SourceFile>,
-        plugin: CompilerPluginRegistrar = CopyBuilderCompilerPluginRegistrar(),
-        commandLineProcessor: CommandLineProcessor = CopyBuilderCommandLineProcessor(),
-        enabled: Boolean = true,
-    ): CompilationResult {
-        val compilation = KotlinCompilation()
-        return compilation.apply {
-            sources = sourceFiles
-            compilerPluginRegistrars = listOf(plugin)
-            pluginOptions = listOf(
-                PluginOption(pluginId, optionName = "enabled", optionValue = enabled.toString()),
-                PluginOption(pluginId, optionName = "verbose", optionValue = "true"),
-                PluginOption(pluginId, optionName = "outputDir", optionValue = temporaryFolder.absolutePath)
+    @Test
+    fun `should handle error case when accessing private property`() {
+        val source = kotlin(
+            "Test.kt",
+            """
+            package test
+            
+            import io.github.windedge.copybuilder.KopyBuilder
+            
+            @KopyBuilder
+            data class Signup(
+                val name: String = "",
+                val email: String? = null,
+                val age: Int? = null,
+                val password: String = "",
+                val confirmPassword: String = "",
+                val accept: Boolean = false,
             )
-            commandLineProcessors = listOf(commandLineProcessor)
-            inheritClassPath = true
-            messageOutputStream = System.out
-            verbose = true
-        }.compile()
+            
+            fun main() {
+                val signup = Signup(name = "Alice", age = 25)
+                val builder = signup.toCopyBuilder()
+                
+                // Test getting public property
+                val nameValue = builder.get("name") as? String
+                    ?: throw AssertionError("Expected non-null name")
+                if (nameValue != "Alice") {
+                    throw AssertionError("Expected name: 'Alice', but was: " + nameValue)
+                }
+                
+                // Test getting nullable property
+                val ageValue = builder.get("age") as? Int
+                if (ageValue != 25) {
+                    throw AssertionError("Expected age: 25, but was: " + ageValue)
+                }
+                
+                // Test getting non-existent property
+                var nonExistentError: IllegalStateException? = null
+                try {
+                    builder.get("nonExistent")
+                } catch (e: IllegalStateException) {
+                    nonExistentError = e
+                }
+                if (nonExistentError == null) {
+                    throw AssertionError("Expected error not thrown for non-existent property")
+                }
+                // Verify the error message
+                if (nonExistentError?.message?.startsWith("Property: nonExistent not found in Class: Signup") != true) {
+                    throw AssertionError("Unexpected error message: " + nonExistentError?.message)
+                }
+            }
+            """.trimIndent()
+        )
+
+        val result = compile(source)
+        if (result.exitCode != KotlinCompilation.ExitCode.OK) {
+            println("Compilation failed with exit code: ${result.exitCode}")
+            println("Messages:")
+            println(result.messages)
+            if (result.exitCode == KotlinCompilation.ExitCode.COMPILATION_ERROR) {
+                println("Compilation errors:")
+                result.messages.lines().filter { it.contains("error:", ignoreCase = true) }.forEach { println(it) }
+            }
+        }
+        assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, "Compilation failed: ${result.messages}")
     }
 
-    @OptIn(ExperimentalCompilerApi::class)
-    fun compile(
-        sourceFile: SourceFile,
-        plugin: CompilerPluginRegistrar = CopyBuilderCompilerPluginRegistrar(),
-        commandLineProcessor: CommandLineProcessor = CopyBuilderCommandLineProcessor()
-    ): CompilationResult {
-        return compile(listOf(sourceFile), plugin, commandLineProcessor)
-    }
 }
 

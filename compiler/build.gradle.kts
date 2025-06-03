@@ -22,7 +22,8 @@ dependencies {
     embedded(libs.poet)
 
     implementation(libs.kotlin.embeddable.compiler)
-
+    
+    // Test dependencies
     testImplementation(kotlin("test"))
     testImplementation(libs.test.kctfork.core)
 }
