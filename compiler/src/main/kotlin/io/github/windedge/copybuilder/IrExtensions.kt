@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.classFqName
 import org.jetbrains.kotlin.ir.types.classifierOrFail
+import org.jetbrains.kotlin.ir.types.isString
 import org.jetbrains.kotlin.ir.types.starProjectedType
 import org.jetbrains.kotlin.ir.util.copyTo
 import org.jetbrains.kotlin.ir.util.parentAsClass
@@ -51,15 +52,29 @@ fun IrBuilderWithScope.kClassReference(classType: IrType): IrClassReference = Ir
 )
 
 @OptIn(UnsafeDuringIrConstructionAPI::class)
-fun IrBuilderWithScope.createErrorCall(pluginContext: IrPluginContext, vararg messages: IrExpression): IrCall =
-    irCall(
-        pluginContext.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("error")))
-            .single { it.owner.valueParameters.size == 1 }
-    ).apply {
-        putValueArgument(0, irConcat().apply {
-            messages.forEach(arguments::add)
-        })
+fun IrBuilderWithScope.createErrorCall(pluginContext: IrPluginContext, vararg messages: IrExpression): IrCall {
+    val irBuiltIns = pluginContext.irBuiltIns
+
+    // Find the error function that takes a single Any parameter
+    val errorFunction = pluginContext.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("error")))
+        .firstOrNull { function ->
+            val owner = function.owner
+            owner.valueParameters.size == 1 &&
+            owner.valueParameters[0].type == irBuiltIns.anyType
+        } ?: error("No suitable error function found")
+
+    // Create a concatenated string from all messages
+    val message = irConcat().apply {
+        messages.forEach { message ->
+            arguments.add(message)
+        }
     }
+
+    // Call the error function with the concatenated message
+    return irCall(errorFunction).apply {
+        putValueArgument(0, message)
+    }
+}
 
 // Check if type is @KopyBuilder annotation
 fun IrType.isKopyBuilder(): Boolean {
