@@ -52,7 +52,7 @@ jobs:
           ORG_GRADLE_PROJECT_sonatypeStagingProfileId: ${{ secrets.SONATYPE_STAGING_PROFILE_ID }}
         run: |
           if [[ ${{ github.event_name }} == 'release' ]]; then
-            ./gradlew -i -s publishAllPublicationsToMavenCentral --no-daemon --no-parallel
+            ./gradlew -i -s publishAndReleaseToMavenCentral --no-daemon --no-parallel
           else
-            ./gradlew -i -s publishAllPublicationsToMavenCentral --no-daemon --no-parallel
+            ./gradlew -i -s publishAndReleaseToMavenCentral --no-daemon --no-parallel
           fi
