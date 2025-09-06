@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
 import org.jetbrains.kotlin.ir.declarations.IrFunction
 import org.jetbrains.kotlin.ir.declarations.IrProperty
 import org.jetbrains.kotlin.ir.expressions.IrExpressionBody
+import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.symbols.UnsafeDuringIrConstructionAPI
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
@@ -60,10 +61,19 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
     @OptIn(UnsafeDuringIrConstructionAPI::class)
     private fun buildConstructor(declaration: IrFunction): IrFunction {
         declaration.body = pluginContext.declarationIrBuilder(declaration.symbol).irBlockBody {
-            val sourceParam = declaration.valueParameters[0]
+            val sourceParam = declaration.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }
             val sourceProperty = declaration.parentAsClass.properties.first { it.name.asString() == "source" }
 
-            +irDelegatingConstructorCall(context.irBuiltIns.anyClass.owner.constructors.single())
+            run {
+                val superCtor = context.irBuiltIns.anyClass.owner.constructors.single()
+                +IrDelegatingConstructorCallImpl(
+                    startOffset,
+                    endOffset,
+                    context.irBuiltIns.unitType,
+                    superCtor.symbol,
+                    superCtor.parentAsClass.typeParameters.size
+                )
+            }
 
             +irSetField(
                 irGet(declaration.parentAsClass.thisReceiver!!),
@@ -103,10 +113,10 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
     private fun IrBuilderWithScope.buildValuesInitializer(): IrExpressionBody {
         return irExprBody(
             irCall(
-                pluginContext.referenceFunctions(MUTABLE_MAP_OF).first { it.owner.valueParameters.isEmpty() }
+                pluginContext.referenceFunctions(MUTABLE_MAP_OF).first { it.owner.parameters.none { it.kind.name == "Regular" || it.kind.name == "Context" } }
             ).apply {
-                putTypeArgument(0, irBuiltIn.stringType)
-                putTypeArgument(1, irBuiltIn.anyNType)
+                typeArguments[0] = irBuiltIn.stringType
+                typeArguments[1] = irBuiltIn.anyNType
             }
         )
     }
@@ -117,26 +127,26 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
         val properties = sourceClass.properties
 
         val toFunction = pluginContext.referenceFunctions(TO_FUNCTION)
-            .first { it.owner.valueParameters.size == 1 }
+            .first { it.owner.parameters.count { p -> p.kind.name == "Regular" || p.kind.name == "Context" } == 1 }
 
         val entries = properties.map { prop ->
             irCall(toFunction).apply {
-                putTypeArgument(0, irBuiltIn.stringType)
-                putTypeArgument(1, irBuiltIn.kClassClass.starProjectedType)
-                extensionReceiver = irString(prop.name.asString())
-                putValueArgument(0, kClassReference(prop.getPropertyType()))
+                typeArguments[0] = irBuiltIn.stringType
+                typeArguments[1] = irBuiltIn.kClassClass.starProjectedType
+                arguments[symbol.owner.parameters.first { it.kind.name == "ExtensionReceiver" }] = irString(prop.name.asString())
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = kClassReference(prop.getPropertyType())
             }
         }
 
         return irExprBody(
             irCall(
                 pluginContext.referenceFunctions(MAP_OF)
-                    .first { it.owner.valueParameters.firstOrNull()?.isVararg == true }
+                    .first { it.owner.parameters.firstOrNull { p -> p.kind.name == "Regular" || p.kind.name == "Context" }?.isVararg == true }
             ).apply {
-                putTypeArgument(0, irBuiltIn.stringType)
-                putTypeArgument(1, irBuiltIn.kClassClass.starProjectedType)
+                typeArguments[0] = irBuiltIn.stringType
+                typeArguments[1] = irBuiltIn.kClassClass.starProjectedType
                 val pairClass = pluginContext.referenceClass(PAIR_CLASS_ID)!!
-                putValueArgument(0, irVararg(elementType = pairClass.defaultType, values = entries.toList()))
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irVararg(elementType = pairClass.defaultType, values = entries.toList())
             }
         )
     }
@@ -153,10 +163,10 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             irExprBody(
                 irCall(
                     pluginContext.referenceFunctions(SET_OF)
-                        .first { it.owner.valueParameters.size == 1 }
+                        .first { it.owner.parameters.count { p -> p.kind.name == "Regular" || p.kind.name == "Context" } == 1 }
                 ).apply {
-                    putTypeArgument(0, irBuiltIn.stringType)
-                    putValueArgument(0, irVararg(irBuiltIn.stringType, entries.toList()))
+                    typeArguments[0] = irBuiltIn.stringType
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irVararg(irBuiltIn.stringType, entries.toList())
                 }
             )
         }
@@ -174,12 +184,12 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
     private fun buildContainsFunction(declaration: IrFunction): IrFunction {
         declaration.body = pluginContext.declarationIrBuilder(declaration.symbol).irBlockBody {
             val propertiesProperty = declaration.parentAsClass.properties.first { it.name == PROPERTIES_NAME }
-            val propertyParam = declaration.valueParameters[0]
+            val propertyParam = declaration.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }
             +irReturn(
                 irCall(irBuiltIn.mapClass.functions.first { it.owner.name.asString() == "containsKey" }).apply {
                     dispatchReceiver =
                         irGetField(irGet(declaration.dispatchReceiverParameter!!), propertiesProperty.backingField!!)
-                    putValueArgument(0, irGet(propertyParam))
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(propertyParam)
                 }
             )
         }
@@ -215,7 +225,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             val privatePropertiesProperty =
                 declaration.parentAsClass.properties.first { it.name == PRIVATE_PROPERTIES_NAME }
             val sourceProperty = declaration.parentAsClass.properties.first { it.name == SOURCE_NAME }
-            val propertyNameParam = declaration.valueParameters[0]
+            val propertyNameParam = declaration.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }
 
             // if (values.contains(key)) return values[key]
             val self = declaration.dispatchReceiverParameter
@@ -223,12 +233,12 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
                 type = irBuiltIn.unitType,
                 condition = irCall(irBuiltIn.mapClass.functionByName("containsKey")).apply {
                     dispatchReceiver = irGetField(irGet(self!!), valuesProperty.backingField!!)
-                    putValueArgument(0, irGet(propertyNameParam))
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(propertyNameParam)
                 },
                 thenPart = irReturn(
                     irCall(irBuiltIn.mapClass.functionByName("get")).apply {
                         dispatchReceiver = irGetField(irGet(self!!), valuesProperty.backingField!!)
-                        putValueArgument(0, irGet(propertyNameParam))
+                        arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(propertyNameParam)
                     }
                 )
             )
@@ -238,7 +248,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
                 type = irBuiltIn.unitType,
                 condition = irCall(irBuiltIn.setClass.functions.first { it.owner.name.asString() == "contains" }).apply {
                     dispatchReceiver = irGetField(irGet(self!!), privatePropertiesProperty.backingField!!)
-                    putValueArgument(0, irGet(propertyNameParam))
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(propertyNameParam)
                 },
                 thenPart = createErrorCall(
                     pluginContext,
@@ -301,8 +311,8 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             val propertiesProperty = declaration.parentAsClass.properties.first { it.name == PROPERTIES_NAME }
             val valuesProperty = declaration.parentAsClass.properties.first { it.name == VALUES_NAME }
             val self = declaration.dispatchReceiverParameter!!
-            val keyParam = declaration.valueParameters[0]
-            val valueParam = declaration.valueParameters[1]
+            val keyParam = declaration.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }
+            val valueParam = declaration.parameters.filter { it.kind.name == "Regular" || it.kind.name == "Context" }[1]
             val sourceClass = getSourceClass(declaration.parentAsClass.properties.first())
 
             // 1. Check if the property exists
@@ -311,7 +321,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
                 condition = irNot(
                     irCall(irBuiltIn.mapClass.functionByName("containsKey")).apply {
                         dispatchReceiver = irGetField(irGet(self), propertiesProperty.backingField!!)
-                        putValueArgument(0, irGet(keyParam))
+                        arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(keyParam)
                     }
                 ),
                 thenPart = createErrorCall(
@@ -326,10 +336,10 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             // 2. Get property type (KClass<*>)
             val propertyType = irTemporary(
                 irCall(irBuiltIn.checkNotNullSymbol).apply {
-                    putValueArgument(0, irCall(irBuiltIn.mapClass.functionByName("get")).apply {
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irCall(irBuiltIn.mapClass.functionByName("get")).apply {
                         dispatchReceiver = irGetField(irGet(self), propertiesProperty.backingField!!)
-                        putValueArgument(0, irGet(keyParam))
-                    })
+                        arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(keyParam)
+                    }
                     type = irBuiltIn.kClassClass.starProjectedType
                 }
             )
@@ -342,13 +352,13 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             }
             val isInstanceCall = irCall(irBuiltIn.kClassClass.functionByName("isInstance")).apply {
                 dispatchReceiver = irGet(propertyType)
-                putValueArgument(0, irGet(valueParam))
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(valueParam)
             }
             +irIfThen(
                 type = irBuiltIn.unitType,
                 condition = irCall(irBuiltIn.andandSymbol).apply {
-                    putValueArgument(0, irNotEquals(irGet(valueParam), irNull()))
-                    putValueArgument(1, irNot(isInstanceCall))
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irNotEquals(irGet(valueParam), irNull())
+                    arguments[symbol.owner.parameters.filter { it.kind.name == "Regular" || it.kind.name == "Context" }[1]] = irNot(isInstanceCall)
                 },
                 thenPart = createErrorCall(
                     pluginContext,
@@ -362,8 +372,8 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             // 4. Store the value
             +irCall(irBuiltIn.mutableMapClass.functionByName("put")).apply {
                 dispatchReceiver = irGetField(irGet(self), valuesProperty.backingField!!)
-                putValueArgument(0, irGet(keyParam))
-                putValueArgument(1, irGet(valueParam))
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(keyParam)
+                arguments[symbol.owner.parameters.filter { it.kind.name == "Regular" || it.kind.name == "Context" }[1]] = irGet(valueParam)
             }
         }
         return declaration
@@ -392,12 +402,12 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
             // Create constructor call
             val constructorCall = irCall(constructor).apply {
                 // Set value for each constructor parameter
-                constructor.valueParameters.forEach { param ->
+                constructor.parameters.filter { it.kind.name == "Regular" || it.kind.name == "Context" }.forEachIndexed { idx, param ->
                     val paramName = param.name.asString()
                     val paramType = param.type
                     val getCall = irCall(declaration.parentAsClass.getSimpleFunction("get")!!).apply {
                         dispatchReceiver = irGet(declaration.dispatchReceiverParameter!!)
-                        putValueArgument(0, irString(paramName))
+                        arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irString(paramName)
                     }
 
                     // Add type casting
@@ -407,7 +417,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
                         irAs(getCall, paramType)
                     }
 
-                    putValueArgument(param.index, castedValue)
+                    arguments[symbol.owner.parameters[idx]] = castedValue
                 }
             }
 

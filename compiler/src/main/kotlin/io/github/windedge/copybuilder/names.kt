@@ -1,9 +1,9 @@
 package io.github.windedge.copybuilder
 
 import com.squareup.kotlinpoet.ClassName
-import io.github.windedge.copybuilder.k1.toClassName
+// import removed: K1 path not used in K2-only build
+// import io.github.windedge.copybuilder.k1.toClassName
 import org.jetbrains.kotlin.GeneratedDeclarationKey
-import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.ir.declarations.IrClass
 import org.jetbrains.kotlin.ir.util.packageFqName
 import org.jetbrains.kotlin.ir.util.parentsWithSelf
@@ -73,9 +73,6 @@ fun ClassName.toImplClassName(): String {
 }
 
 
-fun ClassDescriptor.toImplClassName(): String {
-    return this.toClassName().toImplClassName()
-}
 
 fun ClassName.toImplFileName(): String {
     return "${this.toImplClassSimpleName()}CopyBuilder"
@@ -85,9 +82,6 @@ fun IrClass.toImplFileName(): String {
     return "${this.toImplClassSimpleName()}CopyBuilder"
 }
 
-fun ClassDescriptor.toImplFileName(): String {
-    return this.toClassName().toImplFileName()
-}
 
 internal fun generateImplClassName(baseName: String): Name {
     return Name.identifier(baseName + "CopyBuilderImpl")

@@ -26,6 +26,7 @@ Below is a table showing the compatibility between KopyBuilder versions and Kotl
 | 0.1.6               | 1.8.x, 1.9.x   |
 | 0.2.0               | 2.0.x - 2.1.10 |
 | 0.2.3               | 2.1.20+        |
+| 0.2.5               | 2.2.0+         |
 
 
 ### Code Generation

@@ -71,7 +71,7 @@ class CopyBuilderHostIrTransformer(private val pluginContext: IrPluginContext) :
             +irReturn(
                 irCall(constructor).apply {
                     type = constructor.returnType
-                    putValueArgument(0, irGet(declaration.dispatchReceiverParameter!!))
+                    arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(declaration.dispatchReceiverParameter!!)
                 }
             )
         }
@@ -98,7 +98,7 @@ class CopyBuilderHostIrTransformer(private val pluginContext: IrPluginContext) :
         declaration.origin = IrDeclarationOrigin.DEFINED
         declaration.isFakeOverride = false
         declaration.body = pluginContext.declarationIrBuilder(declaration.symbol).irBlockBody {
-            val initialize = declaration.valueParameters[0]
+            val initialize = declaration.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }
             val dataClass = declaration.parentAsClass
             val thisReceiver = declaration.dispatchReceiverParameter!!
 
@@ -113,7 +113,7 @@ class CopyBuilderHostIrTransformer(private val pluginContext: IrPluginContext) :
             val invokeFunction = initialize.type.classOrFail.functionByName("invoke")
             +irCall(invokeFunction).apply {
                 dispatchReceiver = irGet(initialize)
-                putValueArgument(0, irGet(builder))
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irGet(builder)
             }
 
             // Return builder.build()

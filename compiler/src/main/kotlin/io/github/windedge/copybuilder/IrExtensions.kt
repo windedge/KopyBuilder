@@ -2,9 +2,6 @@ package io.github.windedge.copybuilder
 
 import org.jetbrains.kotlin.backend.common.extensions.IrPluginContext
 import org.jetbrains.kotlin.backend.common.lower.DeclarationIrBuilder
-import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
-import org.jetbrains.kotlin.descriptors.DescriptorVisibility
-import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
 import org.jetbrains.kotlin.ir.builders.IrBuilderWithScope
 import org.jetbrains.kotlin.ir.builders.declarations.IrFunctionBuilder
@@ -59,8 +56,8 @@ fun IrBuilderWithScope.createErrorCall(pluginContext: IrPluginContext, vararg me
     val errorFunction = pluginContext.referenceFunctions(CallableId(FqName("kotlin"), Name.identifier("error")))
         .firstOrNull { function ->
             val owner = function.owner
-            owner.valueParameters.size == 1 &&
-            owner.valueParameters[0].type == irBuiltIns.anyType
+            owner.parameters.count { it.kind.name == "Regular" || it.kind.name == "Context" } == 1 &&
+            owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }.type == irBuiltIns.anyType
         } ?: error("No suitable error function found")
 
     // Create a concatenated string from all messages
@@ -72,7 +69,7 @@ fun IrBuilderWithScope.createErrorCall(pluginContext: IrPluginContext, vararg me
 
     // Call the error function with the concatenated message
     return irCall(errorFunction).apply {
-        putValueArgument(0, message)
+        arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = message
     }
 }
 
@@ -93,8 +90,6 @@ fun IrType.isCopyBuilderHost(): Boolean {
 fun IrClass.addFunc(
     name: String,
     returnType: IrType,
-    modality: Modality = Modality.FINAL,
-    visibility: DescriptorVisibility = DescriptorVisibilities.PUBLIC,
     isStatic: Boolean = false,
     isSuspend: Boolean = false,
     isFakeOverride: Boolean = false,
@@ -108,8 +103,6 @@ fun IrClass.addFunc(
         this.endOffset = endOffset
         this.name = Name.identifier(name)
         this.returnType = returnType
-        this.modality = modality
-        this.visibility = visibility
         this.isSuspend = isSuspend
         this.isFakeOverride = isFakeOverride
         this.isInline = isInline
@@ -117,7 +110,7 @@ fun IrClass.addFunc(
     }.apply {
         if (!isStatic) {
             val thisReceiver = parentAsClass.thisReceiver!!
-            dispatchReceiverParameter = thisReceiver.copyTo(this, type = thisReceiver.type)
+            parameters = listOf(thisReceiver.copyTo(this, type = thisReceiver.type)) + parameters
         }
     }
 

@@ -12,6 +12,18 @@ tasks.withType<Test>().configureEach {
 }
 
 val embeddedDependencies by configurations.creating { isTransitive = false }
+
+kotlin {
+    sourceSets {
+        val main by getting {
+            kotlin.exclude("**/copybuilder/k1/**")
+        }
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compilerOptions.allWarningsAsErrors.set(false)
+}
 dependencies {
     fun embedded(dep: Any) {
         implementation(dep)
