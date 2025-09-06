@@ -1,5 +1,5 @@
 [versions]
-maven-publish = "0.29.0"
+maven-publish = "0.34.0"
 autoservice-annotation = "1.1.1"
 autoservice-processor = "1.1.0"
 kotlin = "2.2.10"

@@ -1,7 +1,5 @@
 @file:Suppress("DSL_SCOPE_VIOLATION")
 
-import com.vanniktech.maven.publish.SonatypeHost
-
 
 plugins {
     `java-gradle-plugin`
@@ -25,4 +23,3 @@ dependencies {
 //    compileOnly(libs.kotlin.gradle.plugin.api)
 //    implementation(libs.ksp.plugin)
 }
-

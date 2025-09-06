@@ -1,6 +1,5 @@
 @file:Suppress("DSL_SCOPE_VIOLATION")
 
-import com.vanniktech.maven.publish.SonatypeHost
 import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalWasmDsl
 
 
@@ -31,12 +30,12 @@ kotlin {
     linuxX64()
     macosArm64()
     mingwX64()
-    
+
     // iOS targets
     iosArm64()
     iosX64()
     iosSimulatorArm64()
-    
+
     /*
         val osName = System.getProperty("os.name")
         val osArch = System.getProperty("os.arch")
@@ -72,4 +71,3 @@ android {
     }
     namespace = "io.github.windedge.copybuilder"
 }
-
