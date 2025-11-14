@@ -146,7 +146,7 @@ class CopyBuilderIrTransformer(private val pluginContext: IrPluginContext) : IrE
                 typeArguments[0] = irBuiltIn.stringType
                 typeArguments[1] = irBuiltIn.kClassClass.starProjectedType
                 val pairClass = pluginContext.referenceClass(PAIR_CLASS_ID)!!
-                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irVararg(elementType = pairClass.defaultType, values = entries.toList())
+                arguments[symbol.owner.parameters.first { it.kind.name == "Regular" || it.kind.name == "Context" }] = irVararg(elementType = pairClass.starProjectedType, values = entries.toList())
             }
         )
     }

@@ -21,12 +21,14 @@ plugins {
 
 Below is a table showing the compatibility between KopyBuilder versions and Kotlin versions:
 
-| KopyBuilder Version | Kotlin Version |
-|---------------------|----------------|
-| 0.1.6               | 1.8.x, 1.9.x   |
-| 0.2.0               | 2.0.x - 2.1.10 |
-| 0.2.3               | 2.1.20+        |
-| 0.2.5               | 2.2.0+         |
+| KopyBuilder Version | Kotlin Version  |
+|---------------------|-----------------|
+| 0.1.6               | 1.8.x, 1.9.x    |
+| 0.2.0               | 2.0.x - 2.1.10  |
+| 0.2.3               | 2.1.20+         |
+| 0.2.5               | 2.2.0 - 2.2.10  |
+| 0.2.6               | 2.2.10          |
+| 0.2.7               | 2.2.20+         |
 
 
 ### Code Generation
